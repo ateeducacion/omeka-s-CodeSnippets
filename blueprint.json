@@ -3,6 +3,9 @@
   "debug": {
     "enabled": true
   },
+  "phpConstants": {
+    "CODE_SNIPPETS_PLAYGROUND": true
+  },
   "landingPage": "/admin/code-snippets",
   "siteOptions": {
     "title": "CodeSnippets Playground",
@@ -31,7 +34,7 @@
     "title": "CodeSnippets Demo",
     "slug": "demo",
     "theme": "default",
-    "summary": "Minimal installation to try the CodeSnippets module in Omeka S Playground.",
+    "summary": "Try CodeSnippets after install: example snippets are seeded, and the confirmation snippet is active in this playground.",
     "isPublic": true,
     "setAsDefault": true
   }
