@@ -7,11 +7,23 @@
 </a><br>
 <small><a href="https://ateeducacion.github.io/omeka-s-playground/?blueprint=https%3A%2F%2Fraw.githubusercontent.com%2Fateeducacion%2Fomeka-s-CodeSnippets%2Frefs%2Fheads%2Fmain%2Fblueprint.json">Try in your browser</a></small>
 
-Manage PHP snippets from the Omeka S admin interface. A global administrator can create, edit, enable, disable, prioritize, and delete snippets. Active snippets run on HTTP requests with the privileges of the Omeka S PHP process.
-
-This module is inspired by the WordPress Code Snippets plugin as a functional and UX reference. It does not copy that source.
+Manage PHP snippets from the Omeka S admin interface, without editing a theme or writing a module for every small change. Inspired by the WordPress Code Snippets plugin as a functional and UX reference; it does not copy that source.
 
 ![Editing a snippet in the Omeka S admin interface](https://raw.githubusercontent.com/ateeducacion/omeka-s-CodeSnippets/refs/heads/main/.github/screenshot.png)
+
+## What it does
+
+- Create, edit, enable, disable, prioritize and delete PHP snippets from the admin
+- **Run location** per snippet: everywhere, only in the administration area, or only on the public site
+- **Priority** to control execution order
+- Editor with PHP syntax highlighting and line numbers (CodeJar, vendored locally, no CDN calls)
+- Syntax is checked before a snippet can be activated, so broken code is never stored as active
+- Runtime errors are captured and shown next to the snippet instead of breaking the page
+- Example snippets included, all inactive
+- Safe mode kill switches to recover from a snippet that breaks the site
+- Optional REST API at `/api/code_snippets`, reads only unless writes are enabled
+
+Snippets run with the privileges of the Omeka S PHP process, and only `global_admin` may manage them. Read the [security model](#security-model) before using this on a production site.
 
 ## Installation
 
