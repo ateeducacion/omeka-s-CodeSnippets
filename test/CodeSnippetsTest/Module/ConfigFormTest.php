@@ -283,4 +283,187 @@ class ConfigFormTest extends TestCase
 
         $this->assertStringNotContainsString('value="site_admin"', $module->getConfigForm($this->renderer()));
     }
+
+    public function testUserIdsAreParsedFromACommaSeparatedList(): void
+    {
+        $settings = $this->settings();
+
+        $this->module($settings)->handleConfigForm(
+            $this->controller(null, [Module::MANAGE_USERS_SETTING => '42, 7,  42 , x, 0'])
+        );
+
+        $this->assertSame([42, 7], $settings->stored[Module::MANAGE_USERS_SETTING]);
+    }
+
+    public function testClearingTheUserFieldRemovesEveryNamedUser(): void
+    {
+        $settings = $this->settings([Module::MANAGE_USERS_SETTING => [42]]);
+
+        $this->module($settings)->handleConfigForm(
+            $this->controller(null, [Module::MANAGE_USERS_SETTING => ''])
+        );
+
+        $this->assertSame([], $settings->stored[Module::MANAGE_USERS_SETTING]);
+    }
+
+    public function testStoredUserIdsAreRenderedBackInTheField(): void
+    {
+        $settings = $this->settings([Module::MANAGE_USERS_SETTING => [42, 7]]);
+
+        $html = $this->module($settings)->getConfigForm($this->renderer());
+
+        $this->assertStringContainsString(Module::MANAGE_USERS_SETTING, $html);
+        $this->assertStringContainsString('value="42, 7"', $html);
+    }
+
+    /**
+     * Without a resolvable account the id is still shown, flagged, so a typo
+     * is visible rather than silently granting nobody.
+     */
+    public function testUnresolvableUserIdsAreFlagged(): void
+    {
+        $settings = $this->settings([Module::MANAGE_USERS_SETTING => [999]]);
+
+        $html = $this->module($settings)->getConfigForm($this->renderer());
+
+        $this->assertStringContainsString('999', $html);
+        $this->assertStringContainsString('no such user', $html);
+    }
+
+    /**
+     * @param array<int, string> $users id => email
+     * @return object
+     */
+    private function apiManager(array $users, bool $explode = false)
+    {
+        return new class ($users, $explode) {
+            /** @var array<int, string> */
+            private $users;
+            /** @var bool */
+            private $explode;
+
+            public function __construct(array $users, bool $explode)
+            {
+                $this->users = $users;
+                $this->explode = $explode;
+            }
+
+            public function read($resource, $id)
+            {
+                if ($this->explode) {
+                    throw new \RuntimeException('api unavailable');
+                }
+                if (!isset($this->users[$id])) {
+                    throw new \RuntimeException('not found');
+                }
+                $email = $this->users[$id];
+                return new class ($email) {
+                    /** @var string */
+                    private $email;
+
+                    public function __construct(string $email)
+                    {
+                        $this->email = $email;
+                    }
+
+                    public function getContent()
+                    {
+                        return new class ($this->email) {
+                            /** @var string */
+                            private $email;
+
+                            public function __construct(string $email)
+                            {
+                                $this->email = $email;
+                            }
+
+                            public function name()
+                            {
+                                return 'Ada';
+                            }
+
+                            public function email()
+                            {
+                                return $this->email;
+                            }
+                        };
+                    }
+                };
+            }
+        };
+    }
+
+    /**
+     * @param object $settings
+     * @param object|null $api
+     */
+    private function moduleWithApi($settings, $api): Module
+    {
+        $services = ['Omeka\Settings' => $settings, 'Omeka\Acl' => new \CodeSnippetsTest\Support\FakeAcl()];
+        if ($api !== null) {
+            $services['Omeka\ApiManager'] = $api;
+        }
+        $module = new Module();
+        $module->setServiceLocator(new ArrayServiceLocator($services));
+        return $module;
+    }
+
+    public function testNamedUsersAreShownWithTheAccountTheyResolveTo(): void
+    {
+        $settings = $this->settings([Module::MANAGE_USERS_SETTING => [42]]);
+        $api = $this->apiManager([42 => 'ada@example.com']);
+
+        $html = $this->moduleWithApi($settings, $api)->getConfigForm($this->renderer());
+
+        $this->assertStringContainsString('ada@example.com', $html);
+        $this->assertStringNotContainsString('no such user', $html);
+    }
+
+    public function testAnIdThatResolvesToNothingIsFlagged(): void
+    {
+        $settings = $this->settings([Module::MANAGE_USERS_SETTING => [42, 999]]);
+        $api = $this->apiManager([42 => 'ada@example.com']);
+
+        $html = $this->moduleWithApi($settings, $api)->getConfigForm($this->renderer());
+
+        $this->assertStringContainsString('ada@example.com', $html);
+        $this->assertStringContainsString('no such user', $html);
+    }
+
+    public function testAFailingApiLeavesTheIdsUnlabelled(): void
+    {
+        $settings = $this->settings([Module::MANAGE_USERS_SETTING => [42]]);
+        $api = $this->apiManager([], true);
+
+        $html = $this->moduleWithApi($settings, $api)->getConfigForm($this->renderer());
+
+        $this->assertStringContainsString('42', $html);
+        $this->assertStringContainsString('no such user', $html);
+    }
+
+    /**
+     * A container that claims to hold the service but fails to build it must
+     * not take the configuration page down.
+     */
+    public function testAServiceLocatorThatThrowsLeavesTheIdsUnlabelled(): void
+    {
+        $settings = $this->settings([Module::MANAGE_USERS_SETTING => [42]]);
+        $services = new class ([
+            'Omeka\Settings' => $settings,
+            'Omeka\Acl' => new \CodeSnippetsTest\Support\FakeAcl(),
+        ]) extends ArrayServiceLocator {
+            public function has(string $id): bool
+            {
+                return true;
+            }
+        };
+
+        $module = new Module();
+        $module->setServiceLocator($services);
+
+        $html = $module->getConfigForm($this->renderer());
+
+        $this->assertStringContainsString('42', $html);
+        $this->assertStringContainsString('no such user', $html);
+    }
 }

@@ -121,7 +121,12 @@ The REST API applies the same ACL, and additionally keeps writes behind an opt-i
 
 ### Who may manage snippets
 
-Out of the box, only `global_admin`. **Admin → Modules → Code Snippets → Configure** lists the other roles, and any role ticked there receives exactly the privileges `global_admin` has for snippets, in the admin interface and over the REST API alike.
+Out of the box, only `global_admin`. **Admin → Modules → Code Snippets → Configure** can widen that two ways:
+
+- **By role** — tick a role, and every account holding it may manage snippets.
+- **By user** — list specific user ids, and only those accounts may, whatever their role. This is how you give one colleague access without promoting everyone who shares their role. A user id appears in the URL of that user's admin page (`/admin/user/42`), and the configuration page echoes each id back with the account it resolves to, so a mistyped number is visible rather than silently granting nobody.
+
+Either way the grant is the same privileges `global_admin` has for snippets, in the admin interface and over the REST API alike.
 
 There is no smaller useful grant. A role that can edit a snippet can run arbitrary PHP inside Omeka, and that code can do anything the web process can, including promoting its own account:
 

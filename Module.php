@@ -7,6 +7,7 @@ namespace CodeSnippets;
 use CodeSnippets\Api\Adapter\SnippetAdapter;
 use CodeSnippets\Controller\Admin\SnippetController;
 use CodeSnippets\Db\Schema;
+use CodeSnippets\Permissions\AllowedUserAssertion;
 use CodeSnippets\Install\ExampleSnippets;
 use CodeSnippets\Service\SnippetExecutor;
 use Laminas\Mvc\MvcEvent;
@@ -51,6 +52,12 @@ class Module extends AbstractModule
      */
     public const MANAGE_ROLES_SETTING = 'codesnippets_manage_roles';
 
+    /**
+     * Individual users allowed to manage snippets, whatever their role, as
+     * chosen in the module configuration. Stored as an array of user ids.
+     */
+    public const MANAGE_USERS_SETTING = 'codesnippets_manage_users';
+
     public const API_PRIVILEGES = [
         'search',
         'read',
@@ -84,7 +91,11 @@ class Module extends AbstractModule
         parent::onBootstrap($event);
 
         $services = $event->getApplication()->getServiceManager();
-        $this->registerAcl($services->get('Omeka\Acl'), $this->managerRoles($services));
+        $this->registerAcl(
+            $services->get('Omeka\Acl'),
+            $this->managerRoles($services),
+            $this->managerUsers($services)
+        );
 
         $event->getApplication()->getEventManager()->attach(
             SnippetExecutor::EVENT_NAME,
@@ -100,7 +111,7 @@ class Module extends AbstractModule
      *
      * @param object $acl Omeka\Permissions\Acl
      */
-    public function registerAcl($acl, array $extraRoles = []): void
+    public function registerAcl($acl, array $extraRoles = [], array $extraUsers = []): void
     {
         if (method_exists($acl, 'hasResource') && !$acl->hasResource(self::RESOURCE_NAME)) {
             $acl->addResource(self::RESOURCE_NAME);
@@ -118,6 +129,63 @@ class Module extends AbstractModule
             $acl->allow($role, self::RESOURCE_NAME, self::PRIVILEGES);
             $acl->allow($role, SnippetController::class, self::PRIVILEGES);
             $acl->allow($role, SnippetAdapter::class, self::API_PRIVILEGES);
+        }
+
+        $userIds = self::sanitizeUserIds($extraUsers);
+        if ($userIds === []) {
+            return;
+        }
+
+        // Rule for every role, narrowed to named users by the assertion. A
+        // role-specific allow above is matched first, so this only ever widens.
+        $assertion = new AllowedUserAssertion($userIds);
+        $acl->allow(null, self::RESOURCE_NAME, self::PRIVILEGES, $assertion);
+        $acl->allow(null, SnippetController::class, self::PRIVILEGES, $assertion);
+        $acl->allow(null, SnippetAdapter::class, self::API_PRIVILEGES, $assertion);
+    }
+
+    /**
+     * Positive integers only, de-duplicated. A malformed entry is dropped
+     * rather than coerced, so a stray value cannot become user 0.
+     *
+     * @param array<int, mixed> $userIds
+     * @return array<int, int>
+     */
+    public static function sanitizeUserIds(array $userIds): array
+    {
+        $clean = [];
+        foreach ($userIds as $id) {
+            if (is_int($id)) {
+                $candidate = $id;
+            } elseif (is_string($id) && ctype_digit(trim($id))) {
+                $candidate = (int) trim($id);
+            } else {
+                continue;
+            }
+            if ($candidate > 0) {
+                $clean[$candidate] = $candidate;
+            }
+        }
+        return array_values($clean);
+    }
+
+    /**
+     * Users the operator allowed to manage snippets. Fails closed, like the
+     * role list.
+     *
+     * @param object $services
+     * @return array<int, int>
+     */
+    private function managerUsers($services): array
+    {
+        try {
+            if (method_exists($services, 'has') && !$services->has('Omeka\Settings')) {
+                return [];
+            }
+            $users = $services->get('Omeka\Settings')->get(self::MANAGE_USERS_SETTING, []);
+            return is_array($users) ? self::sanitizeUserIds($users) : [];
+        } catch (\Throwable $e) {
+            return [];
         }
     }
 
@@ -200,7 +268,87 @@ class Module extends AbstractModule
             . '<p>' . $escape($translate($warning)) . ' ' . $escape($translate($note)) . '</p>'
             . '<p>' . $escape($translate($reads)) . '</p>'
             . '</div></div>'
-            . $this->rolesField($renderer, $settings);
+            . $this->rolesField($renderer, $settings)
+            . $this->usersField($renderer, $settings);
+    }
+
+    /**
+     * Named users allowed to manage snippets whatever their role. Ids are
+     * echoed back with the account they resolve to, so a mistyped number is
+     * visible instead of silently granting nobody, or the wrong person.
+     *
+     * @param object $renderer
+     * @param object $settings
+     */
+    private function usersField($renderer, $settings): string
+    {
+        $translate = $renderer->plugin('translate');
+        $escape = $renderer->plugin('escapeHtml');
+        $escapeAttr = $renderer->plugin('escapeHtmlAttr');
+
+        $ids = self::sanitizeUserIds((array) $settings->get(self::MANAGE_USERS_SETTING, []));
+        $heading = 'Individual users who may manage snippets'; // @translate
+        $help = 'Comma separated user ids. A user id appears in the URL of that user\'s admin page.'; // @translate
+        $same = 'The same warning applies: these users can run PHP as the web process.'; // @translate
+        $unknown = 'no such user'; // @translate
+
+        $resolved = '';
+        $labels = $this->userLabels($ids);
+        if ($ids !== []) {
+            $items = '';
+            foreach ($ids as $id) {
+                $items .= '<li>' . $escape((string) $id) . ' &mdash; '
+                    . $escape(isset($labels[$id]) ? $labels[$id] : $translate($unknown))
+                    . '</li>';
+            }
+            $resolved = '<ul>' . $items . '</ul>';
+        }
+
+        $id = self::MANAGE_USERS_SETTING;
+
+        return '<div class="field">'
+            . '<div class="field-meta"><label for="' . $escapeAttr($id) . '">'
+            . $escape($translate($heading)) . '</label></div>'
+            . '<div class="inputs">'
+            . '<input type="text" name="' . $escapeAttr($id) . '" id="' . $escapeAttr($id) . '"'
+            . ' value="' . $escapeAttr(implode(', ', $ids)) . '">'
+            . $resolved
+            . '<p>' . $escape($translate($help)) . '</p>'
+            . '<p>' . $escape($translate($same)) . '</p>'
+            . '</div></div>';
+    }
+
+    /**
+     * Resolve user ids to a readable label. Best effort: a lookup failure
+     * leaves the id unlabelled rather than blocking the configuration page.
+     *
+     * @param array<int, int> $ids
+     * @return array<int, string>
+     */
+    private function userLabels(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+        try {
+            $services = $this->getServiceLocator();
+            if (method_exists($services, 'has') && !$services->has('Omeka\ApiManager')) {
+                return [];
+            }
+            $api = $services->get('Omeka\ApiManager');
+            $labels = [];
+            foreach ($ids as $id) {
+                try {
+                    $user = $api->read('users', $id)->getContent();
+                    $labels[$id] = sprintf('%s <%s>', $user->name(), $user->email());
+                } catch (\Throwable $e) {
+                    continue;
+                }
+            }
+            return $labels;
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     /**
@@ -284,6 +432,12 @@ class Module extends AbstractModule
         $roles = (array) $controller->params()->fromPost(self::MANAGE_ROLES_SETTING, []);
         $allowed = array_keys($this->roleLabels());
         $settings->set(self::MANAGE_ROLES_SETTING, array_values(array_intersect($roles, $allowed)));
+
+        $users = $controller->params()->fromPost(self::MANAGE_USERS_SETTING, '');
+        $settings->set(
+            self::MANAGE_USERS_SETTING,
+            self::sanitizeUserIds(is_array($users) ? $users : explode(',', (string) $users))
+        );
 
         return true;
     }
