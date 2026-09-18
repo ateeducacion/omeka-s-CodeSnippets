@@ -11,6 +11,8 @@ Manage PHP snippets from the Omeka S admin interface. A global administrator can
 
 This module is inspired by the WordPress Code Snippets plugin as a functional and UX reference. It does not copy that source.
 
+![Editing a snippet in the Omeka S admin interface](https://raw.githubusercontent.com/ateeducacion/omeka-s-CodeSnippets/refs/heads/main/.github/screenshot.png)
+
 ## Installation
 
 Requirements:
