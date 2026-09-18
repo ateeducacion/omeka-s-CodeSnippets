@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-18 17:22+0100\n"
+"POT-Creation-Date: 2026-09-18 18:10+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -181,23 +181,39 @@ msgstr ""
 msgid "Method not allowed."
 msgstr ""
 
-#: Module.php:130
+#: Module.php:186
 msgid "Allow snippet writes over the REST API"
 msgstr ""
 
-#: Module.php:131
+#: Module.php:187
 msgid ""
 "Disabled by default. An API key could then create and change snippet PHP."
 msgstr ""
 
-#: Module.php:132
+#: Module.php:188
 msgid ""
 "Omeka sends API credentials in the query string, where server logs record "
 "them."
 msgstr ""
 
-#: Module.php:133
+#: Module.php:189
 msgid "Reading snippets over the API is not affected by this setting."
+msgstr ""
+
+#: Module.php:226
+msgid "Additional roles that may manage snippets"
+msgstr ""
+
+#: Module.php:227
+msgid "A role listed here can create and edit PHP that Omeka executes."
+msgstr ""
+
+#: Module.php:228
+msgid "That is equivalent to granting global administrator."
+msgstr ""
+
+#: Module.php:229
+msgid "Only add roles held by people you would already trust with the server."
 msgstr ""
 
 #: src/Form/SnippetForm.php:24

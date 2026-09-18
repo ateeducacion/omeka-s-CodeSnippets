@@ -65,30 +65,44 @@ class ConfigFormTest extends TestCase
      * @param mixed $posted
      * @return object
      */
-    private function controller($posted)
+    private function controller($posted, array $extra = [])
     {
-        return new class ($posted) {
+        return new class ($posted, $extra) {
             /** @var mixed */
             private $posted;
 
-            public function __construct($posted)
+            /** @var array<string, mixed> */
+            private $extra;
+
+            public function __construct($posted, array $extra)
             {
                 $this->posted = $posted;
+                $this->extra = $extra;
             }
 
             public function params()
             {
-                return new class ($this->posted) {
+                return new class ($this->posted, $this->extra) {
                     /** @var mixed */
                     private $posted;
 
-                    public function __construct($posted)
+                    /** @var array<string, mixed> */
+                    private $extra;
+
+                    public function __construct($posted, array $extra)
                     {
                         $this->posted = $posted;
+                        $this->extra = $extra;
                     }
 
                     public function fromPost($name = null, $default = null)
                     {
+                        if ($name !== null && array_key_exists($name, $this->extra)) {
+                            return $this->extra[$name];
+                        }
+                        if ($name === Module::MANAGE_ROLES_SETTING) {
+                            return $default;
+                        }
                         return $this->posted;
                     }
                 };
@@ -99,7 +113,10 @@ class ConfigFormTest extends TestCase
     private function module($settings): Module
     {
         $module = new Module();
-        $module->setServiceLocator(new ArrayServiceLocator(['Omeka\Settings' => $settings]));
+        $module->setServiceLocator(new ArrayServiceLocator([
+            'Omeka\Settings' => $settings,
+            'Omeka\Acl' => new \CodeSnippetsTest\Support\FakeAcl(),
+        ]));
         return $module;
     }
 
@@ -137,5 +154,133 @@ class ConfigFormTest extends TestCase
         $this->module($settings)->handleConfigForm($this->controller(null));
 
         $this->assertFalse($settings->stored[SnippetAdapter::WRITE_SETTING]);
+    }
+
+    public function testFormListsAssignableRolesWithoutGlobalAdmin(): void
+    {
+        $html = $this->module($this->settings())->getConfigForm($this->renderer());
+
+        $this->assertStringContainsString('value="site_admin"', $html);
+        $this->assertStringContainsString('value="editor"', $html);
+        $this->assertStringNotContainsString('value="global_admin"', $html);
+    }
+
+    public function testConfiguredRolesRenderChecked(): void
+    {
+        $settings = $this->settings([Module::MANAGE_ROLES_SETTING => ['editor']]);
+
+        $html = $this->module($settings)->getConfigForm($this->renderer());
+
+        $this->assertStringContainsString('value="editor" checked="checked"', $html);
+        $this->assertStringNotContainsString('value="site_admin" checked="checked"', $html);
+    }
+
+    public function testSubmittingRolesStoresThem(): void
+    {
+        $settings = $this->settings();
+
+        $this->module($settings)->handleConfigForm(
+            $this->controller(null, [Module::MANAGE_ROLES_SETTING => ['site_admin', 'editor']])
+        );
+
+        $this->assertSame(['site_admin', 'editor'], $settings->stored[Module::MANAGE_ROLES_SETTING]);
+    }
+
+    /**
+     * The form must not be able to persist a role the ACL does not know, nor
+     * global_admin, which is granted unconditionally.
+     */
+    public function testUnknownRolesAreNotStored(): void
+    {
+        $settings = $this->settings();
+
+        $this->module($settings)->handleConfigForm(
+            $this->controller(null, [Module::MANAGE_ROLES_SETTING => ['site_admin', 'global_admin', 'wat']])
+        );
+
+        $this->assertSame(['site_admin'], $settings->stored[Module::MANAGE_ROLES_SETTING]);
+    }
+
+    public function testClearingEveryCheckboxRemovesAllRoles(): void
+    {
+        $settings = $this->settings([Module::MANAGE_ROLES_SETTING => ['site_admin']]);
+
+        $this->module($settings)->handleConfigForm($this->controller(null));
+
+        $this->assertSame([], $settings->stored[Module::MANAGE_ROLES_SETTING]);
+    }
+
+    /**
+     * Without the ACL service there is no trustworthy role list, so the module
+     * offers no checkboxes rather than guessing role identifiers.
+     */
+    public function testRoleCheckboxesAreOmittedWhenTheAclIsUnavailable(): void
+    {
+        $module = new Module();
+        $module->setServiceLocator(new ArrayServiceLocator(['Omeka\Settings' => $this->settings()]));
+
+        $html = $module->getConfigForm($this->renderer());
+
+        $this->assertStringContainsString(SnippetAdapter::WRITE_SETTING, $html);
+        $this->assertStringNotContainsString('value="site_admin"', $html);
+    }
+
+    public function testRolesCannotBeStoredWhenTheAclIsUnavailable(): void
+    {
+        $settings = $this->settings();
+        $module = new Module();
+        $module->setServiceLocator(new ArrayServiceLocator(['Omeka\Settings' => $settings]));
+
+        $module->handleConfigForm(
+            $this->controller(null, [Module::MANAGE_ROLES_SETTING => ['site_admin']])
+        );
+
+        $this->assertSame([], $settings->stored[Module::MANAGE_ROLES_SETTING]);
+    }
+
+    /**
+     * An ACL that cannot list roles, or one that fails, is treated the same as
+     * having none: no checkboxes and nothing storable.
+     */
+    public function testRoleCheckboxesAreOmittedWhenTheAclCannotListRoles(): void
+    {
+        $aclWithoutLabels = new class {
+            public function hasResource($resource): bool
+            {
+                return false;
+            }
+
+            public function addResource($resource): void
+            {
+            }
+
+            public function allow($role, $resource = null, $privileges = null): void
+            {
+            }
+        };
+        $module = new Module();
+        $module->setServiceLocator(new ArrayServiceLocator([
+            'Omeka\Settings' => $this->settings(),
+            'Omeka\Acl' => $aclWithoutLabels,
+        ]));
+
+        $this->assertStringNotContainsString('value="site_admin"', $module->getConfigForm($this->renderer()));
+    }
+
+    public function testRoleCheckboxesAreOmittedWhenTheAclThrows(): void
+    {
+        $throwing = new class {
+            public function getRoleLabels(): array
+            {
+                throw new \RuntimeException('acl unavailable');
+            }
+        };
+        $module = new Module();
+        $module->setServiceLocator(new ArrayServiceLocator([
+            'Omeka\Settings' => $this->settings(),
+            'Omeka\Acl' => $throwing,
+        ]));
+
+        $this->assertStringNotContainsString('value="site_admin"', $module->getConfigForm($this->renderer()));
     }
 }

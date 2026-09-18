@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CodeSnippets\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-18 17:22+0100\n"
+"POT-Creation-Date: 2026-09-18 18:10+0100\n"
 "PO-Revision-Date: 2026-09-18 13:05+0100\n"
 "Last-Translator: Área de Tecnología Educativa\n"
 "Language-Team: Spanish\n"
@@ -183,28 +183,46 @@ msgstr "No tiene permiso para gestionar fragmentos de código."
 msgid "Method not allowed."
 msgstr "Método no permitido."
 
-#: Module.php:130
+#: Module.php:186
 msgid "Allow snippet writes over the REST API"
 msgstr "Permitir la escritura de fragmentos a través de la API REST"
 
-#: Module.php:131
+#: Module.php:187
 msgid ""
 "Disabled by default. An API key could then create and change snippet PHP."
 msgstr ""
-"Desactivado por omisión. Una clave de API podría entonces crear y modificar el "
-"PHP de los fragmentos."
+"Desactivado por omisión. Una clave de API podría entonces crear y modificar "
+"el PHP de los fragmentos."
 
-#: Module.php:132
+#: Module.php:188
 msgid ""
 "Omeka sends API credentials in the query string, where server logs record "
 "them."
 msgstr ""
-"Omeka envía las credenciales de la API en la cadena de consulta, donde quedan "
-"registradas en los registros del servidor."
+"Omeka envía las credenciales de la API en la cadena de consulta, donde "
+"quedan registradas en los registros del servidor."
 
-#: Module.php:133
+#: Module.php:189
 msgid "Reading snippets over the API is not affected by this setting."
-msgstr "La lectura de fragmentos a través de la API no se ve afectada por este ajuste."
+msgstr ""
+"La lectura de fragmentos a través de la API no se ve afectada por este "
+"ajuste."
+
+#: Module.php:226
+msgid "Additional roles that may manage snippets"
+msgstr "Perfiles adicionales que pueden gestionar fragmentos"
+
+#: Module.php:227
+msgid "A role listed here can create and edit PHP that Omeka executes."
+msgstr "Un perfil incluido aquí puede crear y editar PHP que Omeka ejecuta."
+
+#: Module.php:228
+msgid "That is equivalent to granting global administrator."
+msgstr "Equivale a conceder el perfil de administrador global."
+
+#: Module.php:229
+msgid "Only add roles held by people you would already trust with the server."
+msgstr "Añada solo perfiles de personas a las que ya confiaría el servidor."
 
 #: src/Form/SnippetForm.php:24
 msgid "Display name of the snippet. Names do not need to be unique."

@@ -45,6 +45,12 @@ class Module extends AbstractModule
      *
      * @var array<int, string>
      */
+    /**
+     * Roles allowed to manage snippets besides global_admin, as chosen in the
+     * module configuration. Stored as an array of role identifiers.
+     */
+    public const MANAGE_ROLES_SETTING = 'codesnippets_manage_roles';
+
     public const API_PRIVILEGES = [
         'search',
         'read',
@@ -78,7 +84,7 @@ class Module extends AbstractModule
         parent::onBootstrap($event);
 
         $services = $event->getApplication()->getServiceManager();
-        $this->registerAcl($services->get('Omeka\Acl'));
+        $this->registerAcl($services->get('Omeka\Acl'), $this->managerRoles($services));
 
         $event->getApplication()->getEventManager()->attach(
             SnippetExecutor::EVENT_NAME,
@@ -94,7 +100,7 @@ class Module extends AbstractModule
      *
      * @param object $acl Omeka\Permissions\Acl
      */
-    public function registerAcl($acl): void
+    public function registerAcl($acl, array $extraRoles = []): void
     {
         if (method_exists($acl, 'hasResource') && !$acl->hasResource(self::RESOURCE_NAME)) {
             $acl->addResource(self::RESOURCE_NAME);
@@ -107,9 +113,59 @@ class Module extends AbstractModule
             $acl->addResource(SnippetAdapter::class);
         }
 
-        $acl->allow('global_admin', self::RESOURCE_NAME, self::PRIVILEGES);
-        $acl->allow('global_admin', SnippetController::class, self::PRIVILEGES);
-        $acl->allow('global_admin', SnippetAdapter::class, self::API_PRIVILEGES);
+        $roles = array_merge(['global_admin'], $this->sanitizeRoles($acl, $extraRoles));
+        foreach ($roles as $role) {
+            $acl->allow($role, self::RESOURCE_NAME, self::PRIVILEGES);
+            $acl->allow($role, SnippetController::class, self::PRIVILEGES);
+            $acl->allow($role, SnippetAdapter::class, self::API_PRIVILEGES);
+        }
+    }
+
+    /**
+     * Keep only roles the ACL actually knows. global_admin is dropped because
+     * it is granted unconditionally, and an unknown identifier is ignored
+     * rather than registered, so a stale setting cannot invent a role.
+     *
+     * @param object $acl
+     * @param array<int, mixed> $roles
+     * @return array<int, string>
+     */
+    private function sanitizeRoles($acl, array $roles): array
+    {
+        $known = method_exists($acl, 'getRoleLabels') ? array_keys($acl->getRoleLabels()) : null;
+
+        $clean = [];
+        foreach ($roles as $role) {
+            if (!is_string($role) || $role === '' || $role === 'global_admin') {
+                continue;
+            }
+            if ($known !== null && !in_array($role, $known, true)) {
+                continue;
+            }
+            $clean[$role] = $role;
+        }
+        return array_values($clean);
+    }
+
+    /**
+     * Roles the operator allowed to manage snippets. Any failure to read the
+     * setting grants nothing: snippet management is global_admin only until
+     * the configuration says otherwise.
+     *
+     * @param object $services
+     * @return array<int, string>
+     */
+    private function managerRoles($services): array
+    {
+        try {
+            if (method_exists($services, 'has') && !$services->has('Omeka\Settings')) {
+                return [];
+            }
+            $roles = $services->get('Omeka\Settings')->get(self::MANAGE_ROLES_SETTING, []);
+            return is_array($roles) ? $roles : [];
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     /**
@@ -143,7 +199,77 @@ class Module extends AbstractModule
             . ($enabled ? ' checked="checked"' : '') . '>'
             . '<p>' . $escape($translate($warning)) . ' ' . $escape($translate($note)) . '</p>'
             . '<p>' . $escape($translate($reads)) . '</p>'
+            . '</div></div>'
+            . $this->rolesField($renderer, $settings);
+    }
+
+    /**
+     * Roles allowed to manage snippets. Every role listed here gets the same
+     * privileges as global_admin, because a role that can edit a snippet can
+     * run PHP as the web process and therefore grant itself anything.
+     *
+     * @param object $renderer
+     * @param object $settings
+     */
+    private function rolesField($renderer, $settings): string
+    {
+        $labels = $this->roleLabels();
+        if ($labels === []) {
+            return '';
+        }
+
+        $translate = $renderer->plugin('translate');
+        $escape = $renderer->plugin('escapeHtml');
+        $escapeAttr = $renderer->plugin('escapeHtmlAttr');
+        $selected = (array) $settings->get(self::MANAGE_ROLES_SETTING, []);
+
+        $heading = 'Additional roles that may manage snippets'; // @translate
+        $warning = 'A role listed here can create and edit PHP that Omeka executes.'; // @translate
+        $consequence = 'That is equivalent to granting global administrator.'; // @translate
+        $advice = 'Only add roles held by people you would already trust with the server.'; // @translate
+
+        $boxes = '';
+        foreach ($labels as $role => $label) {
+            $id = self::MANAGE_ROLES_SETTING . '-' . $role;
+            $boxes .= '<label for="' . $escapeAttr($id) . '" style="display:block">'
+                . '<input type="checkbox" name="' . $escapeAttr(self::MANAGE_ROLES_SETTING) . '[]"'
+                . ' id="' . $escapeAttr($id) . '" value="' . $escapeAttr($role) . '"'
+                . (in_array($role, $selected, true) ? ' checked="checked"' : '') . '> '
+                . $escape($translate($label))
+                . '</label>';
+        }
+
+        return '<div class="field">'
+            . '<div class="field-meta"><label>' . $escape($translate($heading)) . '</label></div>'
+            . '<div class="inputs">'
+            . $boxes
+            . '<p>' . $escape($translate($warning)) . ' ' . $escape($translate($consequence)) . '</p>'
+            . '<p>' . $escape($translate($advice)) . '</p>'
             . '</div></div>';
+    }
+
+    /**
+     * Assignable roles, global_admin excluded because it always has access.
+     *
+     * @return array<string, string>
+     */
+    private function roleLabels(): array
+    {
+        try {
+            $services = $this->getServiceLocator();
+            if (method_exists($services, 'has') && !$services->has('Omeka\Acl')) {
+                return [];
+            }
+            $acl = $services->get('Omeka\Acl');
+            if (!method_exists($acl, 'getRoleLabels')) {
+                return [];
+            }
+            $labels = $acl->getRoleLabels();
+            unset($labels['global_admin']);
+            return is_array($labels) ? $labels : [];
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     /**
@@ -154,6 +280,11 @@ class Module extends AbstractModule
         $settings = $this->getServiceLocator()->get('Omeka\Settings');
         $posted = $controller->params()->fromPost(SnippetAdapter::WRITE_SETTING);
         $settings->set(SnippetAdapter::WRITE_SETTING, !empty($posted));
+
+        $roles = (array) $controller->params()->fromPost(self::MANAGE_ROLES_SETTING, []);
+        $allowed = array_keys($this->roleLabels());
+        $settings->set(self::MANAGE_ROLES_SETTING, array_values(array_intersect($roles, $allowed)));
+
         return true;
     }
 

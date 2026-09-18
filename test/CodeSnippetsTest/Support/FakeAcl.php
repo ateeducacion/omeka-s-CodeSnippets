@@ -12,6 +12,24 @@ class FakeAcl
     /** @var array<int, array{0:mixed,1:mixed,2:mixed}> */
     public $allows = [];
 
+    /** @var array<string, string> */
+    public $roleLabels = [
+        'global_admin' => 'Global Administrator',
+        'site_admin' => 'Supervisor',
+        'editor' => 'Editor',
+        'reviewer' => 'Reviewer',
+        'author' => 'Author',
+        'researcher' => 'Researcher',
+    ];
+
+    /**
+     * @return array<string, string>
+     */
+    public function getRoleLabels(): array
+    {
+        return $this->roleLabels;
+    }
+
     public function hasResource($resource): bool
     {
         return isset($this->resources[(string) $resource]);
