@@ -34,7 +34,7 @@
     "title": "CodeSnippets Demo",
     "slug": "demo",
     "theme": "default",
-    "summary": "Try CodeSnippets after install: example snippets are seeded, and the confirmation snippet is active in this playground.",
+    "summary": "Try CodeSnippets after install: WordPress-style example snippets are seeded, and the current-year footer snippet is active in this playground.",
     "isPublic": true,
     "setAsDefault": true
   }

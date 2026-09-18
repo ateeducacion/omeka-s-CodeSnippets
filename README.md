@@ -24,7 +24,7 @@ Install like any Omeka S module:
 2. In Admin → Modules, install **Code Snippets**.
 3. `install()` creates the `code_snippet` table and inserts several example snippets, all **inactive**. Disabling the module does **not** delete snippets.
 
-The examples are there to copy from, the same idea as the WordPress Code Snippets plugin: they do not run until a global administrator activates one. The Omeka S Playground blueprint defines `CODE_SNIPPETS_PLAYGROUND`, which activates **Example: confirm snippets run** so the admin screen shows a success message after install.
+The examples are Omeka S versions of well-known WordPress Code Snippets / WPCode demos (lowercase upload names, hide the admin/user bar, hide the version number, current year in the footer). They do not run until a global administrator activates one. The Omeka S Playground blueprint defines `CODE_SNIPPETS_PLAYGROUND`, which activates **Example: add the current year to the site footer** so you can see snippets working after install.
 
 Docker development (from this repository):
 
@@ -38,7 +38,7 @@ Open `http://localhost:8080`. Default admin: `admin@example.com` / `PLEASE_CHANG
 
 Open **Admin → Code Snippets** (`/admin/code-snippets`).
 
-- **Examples:** A new install already lists a few inactive snippets (log a message, listen for new items, add a response header, confirm snippets run). Activate one to try it.
+- **Examples:** A new install already lists a few inactive snippets (lowercase original filenames, hide the public user bar, hide the Omeka S version in admin, add the current year to the site footer). Activate one to try it.
 - **Create:** Add new snippet. Name and PHP code are required. Description, priority, and Active are optional.
 - **Edit:** Change any field, then Save. Save and activate stores the snippet and sets it active after syntax validation.
 - **Activate / Deactivate:** Use the list or edit screen. State changes are POST requests with CSRF protection.
@@ -195,7 +195,7 @@ Uninstall is destructive: it **drops** the `code_snippet` table and deletes ever
 9. **Two safe modes** — request URL (authenticated global_admin) and process-wide constant/env.
 10. **Throwable per snippet** — isolation, with documented unrecoverable cases.
 11. **Uninstall drops the table** — disable does not.
-12. **Example snippets on install** — inactive by default. `CODE_SNIPPETS_PLAYGROUND` activates the confirmation example in the playground.
+12. **Example snippets on install** — inactive Omeka S versions of common WordPress Code Snippets demos. `CODE_SNIPPETS_PLAYGROUND` activates the current-year example in the playground.
 
 ## Development
 

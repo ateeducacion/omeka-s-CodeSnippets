@@ -13,16 +13,18 @@ use CodeSnippets\Service\SnippetEvaluator;
 use CodeSnippets\Service\SnippetExecutor;
 use CodeSnippets\Service\SnippetRepository;
 use CodeSnippetsTest\Support\ArrayServiceLocator;
-use CodeSnippetsTest\Support\FakeMessenger;
+use CodeSnippetsTest\Support\FakeLayoutView;
+use CodeSnippetsTest\Support\FakeViewEvent;
 use CodeSnippetsTest\Support\LoggerSpy;
 use CodeSnippetsTest\Support\PdoConnection;
 use CodeSnippetsTest\Support\RecordingConnection;
+use CodeSnippetsTest\Support\RecordingSharedEventManager;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
 class ExampleSnippetsTest extends TestCase
 {
-    public function testInstallSeedsInactiveExampleSnippets(): void
+    public function testInstallSeedsInactiveWordpressStyleExamples(): void
     {
         $connection = new RecordingConnection();
         $services = new ArrayServiceLocator(['Omeka\Connection' => $connection]);
@@ -31,7 +33,7 @@ class ExampleSnippetsTest extends TestCase
 
         $this->assertNotEmpty($connection->sql);
         $this->assertStringContainsString('CREATE TABLE `code_snippet`', $connection->sql[0]);
-        $this->assertGreaterThanOrEqual(3, count($connection->inserts));
+        $this->assertGreaterThanOrEqual(4, count($connection->inserts));
 
         $names = [];
         $validator = new PhpValidator();
@@ -50,13 +52,13 @@ class ExampleSnippetsTest extends TestCase
             $names[] = $row['name'];
         }
 
-        $this->assertContains('Example: log a message', $names);
-        $this->assertContains('Example: listen for new items', $names);
-        $this->assertContains('Example: add a response header', $names);
-        $this->assertContains('Example: confirm snippets run', $names);
+        $this->assertContains('Example: lowercase original filenames', $names);
+        $this->assertContains('Example: hide the public user bar', $names);
+        $this->assertContains('Example: hide the Omeka S version in admin', $names);
+        $this->assertContains('Example: add the current year to the site footer', $names);
     }
 
-    public function testPlaygroundBlueprintEnablesTheConfirmationSnippet(): void
+    public function testPlaygroundBlueprintEnablesTheYearSnippet(): void
     {
         $path = dirname(__DIR__, 3) . '/blueprint.json';
         $blueprint = json_decode((string) file_get_contents($path), true);
@@ -65,7 +67,7 @@ class ExampleSnippetsTest extends TestCase
         $this->assertTrue($blueprint['phpConstants']['CODE_SNIPPETS_PLAYGROUND']);
     }
 
-    public function testActivatingTheLogExampleAfterInstallRunsIt(): void
+    public function testActivatingTheYearExampleAfterInstallAppendsTheYear(): void
     {
         $connection = $this->sqliteConnection();
         ExampleSnippets::seed($connection);
@@ -73,13 +75,16 @@ class ExampleSnippetsTest extends TestCase
         $repository = new SnippetRepository($connection);
         $this->assertCount(0, $repository->findActiveOrdered());
 
-        $logSnippet = $this->findByName($repository, 'Example: log a message');
-        $repository->activate((int) $logSnippet['id']);
+        $yearSnippet = $this->findByName(
+            $repository,
+            'Example: add the current year to the site footer'
+        );
+        $repository->activate((int) $yearSnippet['id']);
 
-        $logger = new LoggerSpy();
+        $shared = new RecordingSharedEventManager();
         $executor = $this->makeExecutor($repository);
         $count = $executor->run(
-            new ArrayServiceLocator(['Omeka\Logger' => $logger]),
+            new ArrayServiceLocator(['SharedEventManager' => $shared]),
             null,
             [],
             'global_admin',
@@ -87,14 +92,23 @@ class ExampleSnippetsTest extends TestCase
         );
 
         $this->assertSame(1, $count);
-        $this->assertContains('Hello from CodeSnippets', $logger->messages);
+        $this->assertNotEmpty($shared->attached);
+
+        $view = new FakeLayoutView(false);
+        foreach ($shared->attached as $listener) {
+            $this->assertSame('view.layout', $listener['event']);
+            call_user_func($listener['listener'], new FakeViewEvent($view));
+        }
+
+        $this->assertStringContainsString(date('Y'), $view->content);
+        $this->assertStringContainsString('code-snippets-year', $view->content);
     }
 
     /**
      * @runInSeparateProcess
      * @preserveGlobalState disabled
      */
-    public function testPlaygroundInstallRunsTheConfirmationSnippet(): void
+    public function testPlaygroundInstallRunsTheYearSnippet(): void
     {
         define('CODE_SNIPPETS_PLAYGROUND', true);
 
@@ -104,18 +118,15 @@ class ExampleSnippetsTest extends TestCase
         $repository = new SnippetRepository($connection);
         $active = $repository->findActiveOrdered();
         $this->assertCount(1, $active);
-        $this->assertSame('Example: confirm snippets run', $active[0]['name']);
+        $this->assertSame(
+            'Example: add the current year to the site footer',
+            $active[0]['name']
+        );
 
-        $logger = new LoggerSpy();
-        $messenger = new FakeMessenger();
+        $shared = new RecordingSharedEventManager();
         $executor = $this->makeExecutor($repository);
         $count = $executor->run(
-            new ArrayServiceLocator([
-                'Omeka\Logger' => $logger,
-                'ControllerPluginManager' => new ArrayServiceLocator([
-                    'messenger' => $messenger,
-                ]),
-            ]),
+            new ArrayServiceLocator(['SharedEventManager' => $shared]),
             null,
             [],
             'global_admin',
@@ -123,12 +134,12 @@ class ExampleSnippetsTest extends TestCase
         );
 
         $this->assertSame(1, $count);
-        $this->assertContains('Code Snippets ran after install.', $logger->messages);
-        $this->assertNotEmpty($messenger->success);
-        $this->assertStringContainsString(
-            'Code Snippets ran after install.',
-            $messenger->success[0]
-        );
+
+        $view = new FakeLayoutView(false);
+        foreach ($shared->attached as $listener) {
+            call_user_func($listener['listener'], new FakeViewEvent($view));
+        }
+        $this->assertStringContainsString(date('Y'), $view->content);
     }
 
     private function sqliteConnection(): PdoConnection

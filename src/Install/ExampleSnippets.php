@@ -9,10 +9,14 @@ use CodeSnippets\Db\Schema;
 /**
  * Example snippets inserted on install.
  *
- * They stay inactive on a normal Omeka S install, matching the WordPress
- * Code Snippets habit of shipping demos that do not run until an
- * administrator turns them on. The Omeka S Playground blueprint defines
- * CODE_SNIPPETS_PLAYGROUND so the confirmation example is active there.
+ * They stay inactive on a normal Omeka S install, matching WordPress
+ * Code Snippets / WPCode: demos are copied in, but nothing runs until an
+ * administrator turns one on. Each example is an Omeka S version of a
+ * well-known WordPress snippet (lowercase uploads, hide the admin bar,
+ * hide the generator version, current year in the footer).
+ *
+ * The Omeka S Playground blueprint defines CODE_SNIPPETS_PLAYGROUND so
+ * the current-year example is active there and you can see it working.
  */
 class ExampleSnippets
 {
@@ -48,67 +52,109 @@ class ExampleSnippets
     {
         return [
             [
-                'name' => 'Example: log a message',
-                'description' => 'Writes one line through Omeka’s logger. Activate it, then check the logs. '
+                'name' => 'Example: lowercase original filenames',
+                'description' => 'WordPress analog: add_filter("sanitize_file_name", "mb_strtolower"). '
+                    . 'Lowercases the original filename stored on uploaded media (o:source). '
                     . 'Inactive by default.',
                 'priority' => 10,
                 'active' => false,
                 'code' => <<<'PHP'
-$logger = $services->get('Omeka\Logger');
-$logger->info('Hello from CodeSnippets');
-PHP,
-            ],
-            [
-                'name' => 'Example: listen for new items',
-                'description' => 'Attaches to api.create.post on items and logs the new item id. '
-                    . 'Inactive by default.',
-                'priority' => 10,
-                'active' => false,
-                'code' => <<<'PHP'
-$sharedEventManager = $services->get('SharedEventManager');
-$sharedEventManager->attach(
-    'Omeka\Api\Adapter\ItemAdapter',
-    'api.create.post',
-    function ($event) use ($services) {
-        $logger = $services->get('Omeka\Logger');
-        $response = $event->getParam('response');
-        $resource = $response ? $response->getContent() : null;
-        $id = is_object($resource) && method_exists($resource, 'getId')
-            ? $resource->getId()
-            : '?';
-        $logger->info(sprintf('Code Snippets example: item #%s was created.', $id));
+$shared = $services->get('SharedEventManager');
+$shared->attach(
+    'Omeka\Api\Adapter\MediaAdapter',
+    'api.hydrate.pre',
+    function ($event) {
+        $request = $event->getParam('request');
+        if (!is_object($request) || $request->getOperation() !== 'create') {
+            return;
+        }
+        $files = $request->getFileData();
+        if (isset($files['file']) && is_array($files['file'])) {
+            foreach ($files['file'] as $index => $file) {
+                if (!empty($file['name'])) {
+                    $files['file'][$index]['name'] = mb_strtolower($file['name']);
+                }
+            }
+            $request->setFileData($files);
+        }
+        $data = $request->getContent();
+        if (!empty($data['o:source']) && is_string($data['o:source'])) {
+            $data['o:source'] = mb_strtolower($data['o:source']);
+            $request->setContent($data);
+        }
     }
 );
 PHP,
             ],
             [
-                'name' => 'Example: add a response header',
-                'description' => 'Adds X-Code-Snippets-Example: 1 on EVENT_FINISH. Inactive by default.',
+                'name' => 'Example: hide the public user bar',
+                'description' => 'WordPress analog: add_filter("show_admin_bar", "__return_false"). '
+                    . 'Hides Omeka’s public user bar (#user-bar) for logged-in visitors. '
+                    . 'Inactive by default.',
                 'priority' => 10,
                 'active' => false,
                 'code' => <<<'PHP'
-$event->getApplication()->getEventManager()->attach(
-    'finish',
-    function ($e) {
-        $e->getResponse()->getHeaders()->addHeaderLine('X-Code-Snippets-Example', '1');
+$shared = $services->get('SharedEventManager');
+$shared->attach('*', 'view.layout', function ($event) {
+    $view = $event->getTarget();
+    if (!is_object($view) || !method_exists($view, 'params') || !method_exists($view, 'headStyle')) {
+        return;
     }
-);
+    $params = $view->params()->fromRoute();
+    if (!empty($params['__ADMIN__'])) {
+        return;
+    }
+    $view->headStyle()->appendStyle('#user-bar { display: none !important; }');
+});
 PHP,
             ],
             [
-                'name' => 'Example: confirm snippets run',
-                'description' => 'Shows a success message in admin and writes a log line. Left inactive on a '
-                    . 'normal install. The Omeka S Playground blueprint activates it so you can confirm '
-                    . 'the module ran after install.',
+                'name' => 'Example: hide the Omeka S version in admin',
+                'description' => 'WordPress analog: remove the generator / version number. '
+                    . 'Hides the version string in the admin footer. Inactive by default.',
+                'priority' => 10,
+                'active' => false,
+                'code' => <<<'PHP'
+$shared = $services->get('SharedEventManager');
+$shared->attach('*', 'view.layout', function ($event) {
+    $view = $event->getTarget();
+    if (!is_object($view) || !method_exists($view, 'params') || !method_exists($view, 'headStyle')) {
+        return;
+    }
+    $params = $view->params()->fromRoute();
+    if (empty($params['__ADMIN__'])) {
+        return;
+    }
+    $view->headStyle()->appendStyle('.site-version .version-number { display: none; }');
+});
+PHP,
+            ],
+            [
+                'name' => 'Example: add the current year to the site footer',
+                'description' => 'WordPress analog: a [year] / current-year snippet. '
+                    . 'Appends © YYYY after the page content (just above the theme footer). '
+                    . 'Inactive on a normal install. The Omeka S Playground blueprint activates '
+                    . 'it so you can confirm snippets run after install.',
                 'priority' => 1,
                 'active' => self::isPlayground(),
                 'code' => <<<'PHP'
-$services->get('Omeka\Logger')->info('Code Snippets ran after install.');
-$services->get('ControllerPluginManager')
-    ->get('messenger')
-    ->addSuccess(
-        'Code Snippets ran after install. This example is active in the playground so you can confirm the module works.'
+$shared = $services->get('SharedEventManager');
+$shared->attach('*', 'view.layout', function ($event) {
+    $view = $event->getTarget();
+    if (!is_object($view) || !method_exists($view, 'vars')) {
+        return;
+    }
+    $vars = $view->vars();
+    $year = date('Y');
+    $html = sprintf(
+        '<p class="code-snippets-year">&copy; %s</p>',
+        htmlspecialchars($year, ENT_QUOTES, 'UTF-8')
     );
+    if (is_array($vars) || $vars instanceof \ArrayAccess) {
+        $current = isset($vars['content']) ? $vars['content'] : '';
+        $vars['content'] = $current . $html;
+    }
+});
 PHP,
             ],
         ];
