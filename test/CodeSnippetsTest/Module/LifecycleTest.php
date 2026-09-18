@@ -90,4 +90,86 @@ class LifecycleTest extends TestCase
             realpath($path)
         );
     }
+
+    public function testInstallAndUninstallUseConnection(): void
+    {
+        $connection = new class {
+            /** @var array<int, string> */
+            public $sql = [];
+
+            public function exec($sql)
+            {
+                $this->sql[] = (string) $sql;
+            }
+        };
+        $locator = $this->createMock(\Laminas\ServiceManager\ServiceLocatorInterface::class);
+        $locator->method('get')->willReturn($connection);
+
+        $module = new Module();
+        $module->install($locator);
+        $module->upgrade('0.0.0', '0.1.0', $locator);
+        $module->uninstall($locator);
+
+        $this->assertCount(2, $connection->sql);
+        $this->assertStringContainsString('CREATE TABLE', $connection->sql[0]);
+        $this->assertStringContainsString('DROP TABLE', $connection->sql[1]);
+    }
+
+    public function testOnBootstrapRegistersAclAndExecutor(): void
+    {
+        $acl = new \CodeSnippetsTest\Support\FakeAcl();
+        $executor = new SnippetExecutor(
+            new \CodeSnippetsTest\Support\InMemorySnippetRepository(),
+            new \CodeSnippets\Service\SafeMode(),
+            new SnippetEvaluator(),
+            new \CodeSnippets\Service\PhpValidator()
+        );
+        $events = new class {
+            /** @var array<int, array{0:mixed,1:mixed,2:mixed}> */
+            public $attached = [];
+
+            public function attach($event, $callback, $priority = 1)
+            {
+                $this->attached[] = [$event, $callback, $priority];
+            }
+        };
+        $services = new \CodeSnippetsTest\Support\FakeContainer([
+            'Omeka\Acl' => $acl,
+            SnippetExecutor::class => $executor,
+        ]);
+        $application = new class ($services, $events) {
+            /** @var object */
+            private $services;
+            /** @var object */
+            private $events;
+
+            public function __construct($services, $events)
+            {
+                $this->services = $services;
+                $this->events = $events;
+            }
+
+            public function getServiceManager()
+            {
+                return $this->services;
+            }
+
+            public function getEventManager()
+            {
+                return $this->events;
+            }
+        };
+
+        $event = new \Laminas\Mvc\MvcEvent();
+        $event->application = $application;
+
+        $module = new Module();
+        $module->onBootstrap($event);
+
+        $this->assertNotEmpty($acl->allows);
+        $this->assertCount(1, $events->attached);
+        $this->assertSame(SnippetExecutor::EVENT_NAME, $events->attached[0][0]);
+        $this->assertSame(SnippetExecutor::PRIORITY, $events->attached[0][2]);
+        $this->assertSame([$executor, 'executeFromMvcEvent'], $events->attached[0][1]);
+    }
 }

@@ -231,6 +231,179 @@ class SnippetExecutorTest extends TestCase
         $this->assertLessThan(1, SnippetExecutor::PRIORITY);
     }
 
+    public function testExecuteFromMvcEventReadsApplication(): void
+    {
+        $this->repository->create([
+            'name' => 'mvc',
+            'code' => '$GLOBALS["code_snippets_exec_log"][] = "mvc";',
+            'active' => true,
+        ]);
+        $services = new \stdClass();
+        $request = [];
+        $application = new class ($services, $request) {
+            /** @var object */
+            private $services;
+            /** @var mixed */
+            private $request;
+
+            public function __construct($services, $request)
+            {
+                $this->services = $services;
+                $this->request = $request;
+            }
+
+            public function getServiceManager()
+            {
+                return $this->services;
+            }
+
+            public function getRequest()
+            {
+                return $this->request;
+            }
+        };
+        $event = new \Laminas\Mvc\MvcEvent();
+        $event->application = $application;
+        $this->executor->executeFromMvcEvent($event);
+        // PHPUnit is CLI, so execution is skipped after the event is unpacked.
+        $this->assertTrue($this->executor->hasStarted());
+        $this->assertSame([], $GLOBALS['code_snippets_exec_log']);
+    }
+
+    public function testExecuteFromMvcEventFallsBackToEventRequest(): void
+    {
+        $this->repository->create([
+            'name' => 'evt',
+            'code' => '$GLOBALS["code_snippets_exec_log"][] = "evt";',
+            'active' => true,
+        ]);
+        $event = new \Laminas\Mvc\MvcEvent();
+        $event->application = new class {
+            public function getServiceManager()
+            {
+                return null;
+            }
+        };
+        $event->request = [];
+        $this->executor->executeFromMvcEvent($event);
+        $this->assertTrue($this->executor->hasStarted());
+        $this->assertSame([], $GLOBALS['code_snippets_exec_log']);
+    }
+
+    public function testCurrentRoleFromAuthenticationService(): void
+    {
+        $auth = new class {
+            public function getIdentity()
+            {
+                return new class {
+                    public function getRole()
+                    {
+                        return 'global_admin';
+                    }
+                };
+            }
+        };
+        $executor = new SnippetExecutor(
+            $this->repository,
+            new SafeMode(),
+            new SnippetEvaluator(),
+            new PhpValidator(),
+            $this->logger,
+            $auth
+        );
+        $this->repository->create([
+            'name' => 'role',
+            'code' => '$GLOBALS["code_snippets_exec_log"][] = "role";',
+            'active' => true,
+        ]);
+        $executor->run(null, null, ['snippets-safe-mode' => '1'], null, 'fpm-fcgi');
+        // Role is resolved inside executeFromMvcEvent, not run(). Cover getIdentity throw:
+        $throwing = new class {
+            public function getIdentity()
+            {
+                throw new \RuntimeException('auth down');
+            }
+        };
+        $executor2 = new SnippetExecutor(
+            $this->repository,
+            new SafeMode(),
+            new SnippetEvaluator(),
+            new PhpValidator(),
+            null,
+            $throwing
+        );
+        $event = new \Laminas\Mvc\MvcEvent();
+        $executor2->executeFromMvcEvent($event);
+        $this->assertTrue($executor2->hasStarted());
+    }
+
+    public function testRecordErrorFailureIsLogged(): void
+    {
+        $repository = new class extends InMemorySnippetRepository {
+            public function recordError(int $id, string $type, string $message, ?int $line): void
+            {
+                throw new \RuntimeException('persist failed');
+            }
+        };
+        $repository->create([
+            'name' => 'A',
+            'code' => 'throw new \\RuntimeException("x");',
+            'active' => true,
+        ]);
+        $logger = new LoggerSpy();
+        $executor = new SnippetExecutor(
+            $repository,
+            new SafeMode(),
+            new SnippetEvaluator(),
+            new PhpValidator(),
+            $logger,
+            null
+        );
+        $executor->run(null, null, [], 'global_admin', 'fpm-fcgi');
+        $this->assertGreaterThanOrEqual(2, count($logger->messages));
+        $this->assertStringContainsString('persist failed', $logger->messages[1]);
+    }
+
+    public function testLoggerWithoutErrIsIgnored(): void
+    {
+        $this->repository->create([
+            'name' => 'A',
+            'code' => 'throw new \\RuntimeException("x");',
+            'active' => true,
+        ]);
+        $executor = new SnippetExecutor(
+            $this->repository,
+            new SafeMode(),
+            new SnippetEvaluator(),
+            new PhpValidator(),
+            new \stdClass(),
+            null
+        );
+        $executor->run(null, null, [], 'global_admin', 'fpm-fcgi');
+        $this->assertSame('RuntimeException', $this->repository->find(1)['last_error_type']);
+    }
+
+    public function testIdentityWithoutGetRole(): void
+    {
+        $auth = new class {
+            public function getIdentity()
+            {
+                return new \stdClass();
+            }
+        };
+        $executor = new SnippetExecutor(
+            $this->repository,
+            new SafeMode(),
+            new SnippetEvaluator(),
+            new PhpValidator(),
+            null,
+            $auth
+        );
+        $event = new \Laminas\Mvc\MvcEvent();
+        $executor->executeFromMvcEvent($event);
+        $this->assertTrue($executor->hasStarted());
+    }
+
     private function makeExecutor(): SnippetExecutor
     {
         return new SnippetExecutor(

@@ -31,4 +31,20 @@ class SnippetFormTest extends TestCase
             (int) $form->get('priority')->getValue()
         );
     }
+
+    public function testInputFilterSpecification(): void
+    {
+        $form = new SnippetForm('snippet');
+        $form->init();
+        $spec = $form->getInputFilterSpecification();
+        $this->assertTrue($spec['name']['required']);
+        $this->assertTrue($spec['code']['required']);
+        $this->assertFalse($spec['description']['required']);
+        $this->assertFalse($spec['priority']['required']);
+        $this->assertFalse($spec['active']['required']);
+        $this->assertTrue($spec['csrf']['required']);
+        $filter = $form->getInputFilter();
+        $this->assertTrue($filter->has('name'));
+        $this->assertTrue($filter->has('code'));
+    }
 }

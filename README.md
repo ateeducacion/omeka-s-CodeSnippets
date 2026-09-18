@@ -1,5 +1,7 @@
 # Omeka S Code Snippets
 
+[![codecov](https://codecov.io/gh/ateeducacion/omeka-s-CodeSnippets/branch/main/graph/badge.svg)](https://codecov.io/gh/ateeducacion/omeka-s-CodeSnippets)
+
 <a href="https://ateeducacion.github.io/omeka-s-playground/?blueprint=https%3A%2F%2Fraw.githubusercontent.com%2Fateeducacion%2Fomeka-s-CodeSnippets%2Frefs%2Fheads%2Fmain%2Fblueprint.json">
   <img src="https://raw.githubusercontent.com/ateeducacion/omeka-s-CodeSnippets/refs/heads/main/.github/assets/playground-preview-button.svg" alt="Try CodeSnippets in your browser" width="224">
 </a><br>
@@ -196,6 +198,7 @@ Uninstall is destructive: it **drops** the `code_snippet` table and deletes ever
 ```sh
 make lint
 make test
+make test-coverage
 make i18n
 make package VERSION=1.0.0
 ```

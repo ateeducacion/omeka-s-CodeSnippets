@@ -148,10 +148,16 @@ compile-mo:
 i18n: generate-pot update-po check-untranslated compile-mo
 
 # Run unit tests
-.PHONY: test
+.PHONY: test test-coverage
 test: deps-update
 	@echo "Running unit tests..."
 	"vendor/bin/phpunit" -c test/phpunit.xml
+
+# Run unit tests and write Clover coverage for Codecov
+test-coverage: deps-update
+	@echo "Running unit tests with coverage..."
+	# pcov auto-detects pcov.directory as src/, which silently drops Module.php from the report.
+	php -d pcov.directory=. -d pcov.exclude='~/(vendor|test)/~' "vendor/bin/phpunit" -c test/phpunit.xml --coverage-clover coverage.xml --coverage-text
 
 # Display help with available commands
 help:
@@ -176,6 +182,7 @@ help:
 	@echo ""
 	@echo "Testing:"
 	@echo "  test              - Run unit tests with PHPUnit"
+	@echo "  test-coverage     - Run unit tests and write Clover coverage.xml"
 	@echo ""
 	@echo "Packaging:"
 	@echo "  package           - Generate a .zip package of the module with version tag"
