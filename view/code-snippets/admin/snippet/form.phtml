@@ -11,16 +11,9 @@ $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 $escapeAttr = $this->plugin('escapeHtmlAttr');
 
-// Inline editor CSS/JS so highlighting still works when extra asset GETs
-// 404 (Omeka S Playground, broken static maps). Files remain on disk too.
-$csRoot = dirname(__DIR__, 4);
-$csRead = static function ($relative) use ($csRoot) {
-    $path = $csRoot . '/' . $relative;
-    return is_readable($path) ? file_get_contents($path) : '';
-};
-$csCss = $csRead('asset/css/code-snippets.css');
-$csJar = $csRead('asset/vendor/codejar/codejar.js');
-$csEditor = $csRead('asset/js/code-snippets-editor.js');
+$csCss = \CodeSnippets\View\EditorAssets::contents('asset/css/code-snippets.css');
+$csJar = \CodeSnippets\View\EditorAssets::contents('asset/vendor/codejar/codejar.js');
+$csEditor = \CodeSnippets\View\EditorAssets::contents('asset/js/code-snippets-editor.js');
 ?>
 <?php if ($csCss !== ''): ?>
 <style><?php echo $csCss; ?></style>

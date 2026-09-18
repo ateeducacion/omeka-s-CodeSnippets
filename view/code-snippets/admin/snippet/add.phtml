@@ -7,7 +7,6 @@
  */
 $translate = $this->plugin('translate');
 
-$this->headLink()->appendStylesheet($this->assetUrl('css/code-snippets.css', 'CodeSnippets'));
 $this->htmlElement('body')->appendAttribute('class', 'code-snippets add');
 ?>
 <?php echo $this->pageTitle($translate('Add snippet')); ?>

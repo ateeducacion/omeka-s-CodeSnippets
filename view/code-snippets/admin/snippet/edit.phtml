@@ -9,7 +9,6 @@
  */
 $translate = $this->plugin('translate');
 
-$this->headLink()->appendStylesheet($this->assetUrl('css/code-snippets.css', 'CodeSnippets'));
 $this->htmlElement('body')->appendAttribute('class', 'code-snippets edit');
 ?>
 <?php echo $this->pageTitle(sprintf($translate('Edit snippet #%s'), $snippet['id'])); ?>
