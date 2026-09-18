@@ -64,12 +64,17 @@ class ModuleConfigTest extends TestCase
         $this->assertFalse(strpos($codeSnippets, '[/:action]') !== false);
     }
 
+    /**
+     * `configurable` must stay true: Omeka renders the Configure link only for
+     * a configurable module, and that link is the only way an operator reaches
+     * the REST API write gate in Module::getConfigForm().
+     */
     public function testModuleIniIdentity(): void
     {
         $ini = file_get_contents(dirname(__DIR__, 3) . '/config/module.ini');
         $this->assertNotFalse($ini);
         $this->assertTrue(strpos($ini, 'name         = "Code Snippets"') !== false);
-        $this->assertTrue(strpos($ini, 'configurable = false') !== false);
+        $this->assertTrue(strpos($ini, 'configurable = true') !== false);
         $this->assertTrue(strpos($ini, 'omeka_version_constraint = "^4.1.0"') !== false);
         $this->assertTrue(strpos($ini, 'author       = "Área de Tecnología Educativa"') !== false);
     }
