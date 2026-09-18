@@ -1,0 +1,61 @@
+{
+    "name": "ateeducacion/omeka-s-codesnippets",
+    "description": "Manage and execute trusted PHP snippets from the Omeka S admin interface",
+    "type": "omeka-s-module",
+    "license": "GPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Área de Tecnología Educativa",
+            "email": "ate.educacion@gobiernodecanarias.org"
+        }
+    ],
+    "homepage": "https://github.com/ateeducacion/omeka-s-CodeSnippets",
+    "support": {
+        "issues": "https://github.com/ateeducacion/omeka-s-CodeSnippets/issues"
+    },
+    "keywords": [
+        "Omeka S",
+        "module",
+        "php",
+        "snippets",
+        "hooks"
+    ],
+    "require": {
+        "php": ">=8.0"
+    },
+    "config": {
+        "platform": {
+            "php": "8.0"
+        },
+        "allow-plugins": {
+            "omeka/composer-addon-installer": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require-dev": {
+        "squizlabs/php_codesniffer": "*",
+        "phpunit/phpunit": "*",
+        "zerocrates/extract-tagged-strings": "dev-master",
+        "laminas/laminas-form": "^3.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "CodeSnippets\\": "src/"
+        },
+        "classmap": [
+            "Module.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "CodeSnippetsTest\\": "test/CodeSnippetsTest/"
+        }
+    },
+    "repositories": [
+        {
+        "type": "vcs",
+        "url": "https://github.com/zerocrates/extract-tagged-strings.git"
+        }
+    ]
+}

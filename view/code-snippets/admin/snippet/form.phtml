@@ -1,0 +1,84 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var \CodeSnippets\Form\SnippetForm $form
+ * @var array<string, mixed>|null $snippet
+ * @var bool $safeModeActive
+ * @var array<string, string> $safeModeQuery
+ * @var string|null $actionCsrf
+ */
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+$escapeAttr = $this->plugin('escapeHtmlAttr');
+?>
+
+<?php if (!empty($safeModeActive)): ?>
+<div class="messages" role="status">
+    <p class="warning"><?php echo $escape($translate('Safe mode is active. PHP snippets are not being executed.')); ?></p>
+</div>
+<?php endif; ?>
+
+<div class="messages" role="note">
+    <p class="warning">
+        <?php echo $escape($translate('PHP snippets execute with the privileges of the Omeka S PHP process. Only trusted global administrators should be allowed to manage snippets.')); ?>
+    </p>
+</div>
+
+<?php if ($snippet): ?>
+<p>
+    <strong><?php echo $escape($translate('Status')); ?>:</strong>
+    <?php if (!empty($snippet['active'])): ?>
+        <span class="code-snippets-status is-active"><?php echo $escape($translate('Active')); ?></span>
+    <?php else: ?>
+        <span class="code-snippets-status is-inactive"><?php echo $escape($translate('Inactive')); ?></span>
+    <?php endif; ?>
+</p>
+<?php if (!empty($snippet['last_error_message'])): ?>
+<div class="code-snippets-last-error">
+    <h3><?php echo $escape($translate('Last runtime error')); ?></h3>
+    <dl>
+        <dt><?php echo $escape($translate('Error type')); ?></dt>
+        <dd><?php echo $escape((string) $snippet['last_error_type']); ?></dd>
+        <dt><?php echo $escape($translate('Message')); ?></dt>
+        <dd><?php echo $escape((string) $snippet['last_error_message']); ?></dd>
+        <?php if ($snippet['last_error_line'] !== null): ?>
+        <dt><?php echo $escape($translate('Line')); ?></dt>
+        <dd><?php echo $escape((string) $snippet['last_error_line']); ?></dd>
+        <?php endif; ?>
+        <dt><?php echo $escape($translate('Date/time')); ?></dt>
+        <dd><?php echo $escape((string) $snippet['last_error_at']); ?></dd>
+    </dl>
+</div>
+<?php endif; ?>
+<?php endif; ?>
+
+<?php
+$form->prepare();
+echo $this->form()->openTag($form);
+echo $this->formCollection($form, false);
+?>
+<div id="page-actions">
+    <button type="submit" name="submit" value="save"><?php echo $escape($translate('Save')); ?></button>
+    <button type="submit" name="submit_save_and_activate" value="1"><?php echo $escape($translate('Save and activate')); ?></button>
+    <?php echo $this->hyperlink(
+        $translate('Cancel'),
+        $this->url('admin/code-snippets', [], ['query' => $safeModeQuery]),
+        ['class' => 'button']
+    ); ?>
+</div>
+<?php echo $this->form()->closeTag(); ?>
+
+<?php if ($snippet && !empty($actionCsrf)): ?>
+<div class="code-snippets-side-actions">
+    <?php if (!empty($snippet['active'])): ?>
+    <form method="post" action="<?php echo $escapeAttr($this->url('admin/code-snippets/deactivate', ['id' => $snippet['id']], ['query' => $safeModeQuery])); ?>">
+        <input type="hidden" name="csrf" value="<?php echo $escapeAttr($actionCsrf); ?>">
+        <button type="submit"><?php echo $escape($translate('Deactivate')); ?></button>
+    </form>
+    <?php endif; ?>
+    <form method="post" action="<?php echo $escapeAttr($this->url('admin/code-snippets/delete', ['id' => $snippet['id']], ['query' => $safeModeQuery])); ?>" onsubmit="return confirm('<?php echo $escapeAttr($translate('Are you sure you want to delete this snippet?')); ?>');">
+        <input type="hidden" name="csrf" value="<?php echo $escapeAttr($actionCsrf); ?>">
+        <button type="submit" class="delete"><?php echo $escape($translate('Delete')); ?></button>
+    </form>
+</div>
+<?php endif; ?>

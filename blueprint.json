@@ -1,0 +1,38 @@
+{
+  "$schema": "https://ateeducacion.github.io/omeka-s-playground/assets/blueprints/blueprint-schema.json",
+  "debug": {
+    "enabled": true
+  },
+  "landingPage": "/admin/code-snippets",
+  "siteOptions": {
+    "title": "CodeSnippets Playground",
+    "locale": "es",
+    "timezone": "Atlantic/Canary"
+  },
+  "users": [
+    {
+      "username": "admin",
+      "email": "admin@example.com",
+      "password": "password",
+      "role": "global_admin"
+    }
+  ],
+  "modules": [
+    {
+      "name": "CodeSnippets",
+      "state": "activate",
+      "source": {
+        "type": "url",
+        "url": "https://github.com/ateeducacion/omeka-s-CodeSnippets/archive/refs/heads/main.zip"
+      }
+    }
+  ],
+  "site": {
+    "title": "CodeSnippets Demo",
+    "slug": "demo",
+    "theme": "default",
+    "summary": "Minimal installation to try the CodeSnippets module in Omeka S Playground.",
+    "isPublic": true,
+    "setAsDefault": true
+  }
+}

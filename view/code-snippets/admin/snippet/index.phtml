@@ -1,0 +1,119 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var array<int, array<string, mixed>> $snippets
+ * @var bool $safeModeActive
+ * @var bool $emergencySafeMode
+ * @var array<string, string> $safeModeQuery
+ * @var string $actionCsrf
+ */
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+$escapeAttr = $this->plugin('escapeHtmlAttr');
+
+$this->headLink()->appendStylesheet($this->assetUrl('css/code-snippets.css', 'CodeSnippets'));
+$this->htmlElement('body')->appendAttribute('class', 'code-snippets browse');
+?>
+<?php echo $this->pageTitle($translate('Code Snippets')); ?>
+
+<?php if (!empty($emergencySafeMode)): ?>
+<div class="messages" role="status">
+    <p class="error"><?php echo $escape($translate('Emergency safe mode is active. PHP snippets are not being executed.')); ?></p>
+</div>
+<?php elseif (!empty($safeModeActive)): ?>
+<div class="messages" role="status">
+    <p class="warning"><?php echo $escape($translate('Safe mode is active. PHP snippets are not being executed.')); ?></p>
+</div>
+<?php endif; ?>
+
+<div id="page-actions">
+    <?php echo $this->hyperlink(
+        $translate('Add new snippet'),
+        $this->url('admin/code-snippets/add', [], ['query' => $safeModeQuery]),
+        ['class' => 'button']
+    ); ?>
+</div>
+
+<?php if (!$snippets): ?>
+<p><?php echo $escape($translate('No snippets found.')); ?></p>
+<?php else: ?>
+<table class="tablesaw" data-tablesaw-mode="stack">
+    <thead>
+        <tr>
+            <th><?php echo $escape($translate('Name')); ?></th>
+            <th><?php echo $escape($translate('Status')); ?></th>
+            <th><?php echo $escape($translate('Priority')); ?></th>
+            <th><?php echo $escape($translate('Modified')); ?></th>
+            <th><?php echo $escape($translate('Last error')); ?></th>
+            <th><?php echo $escape($translate('Actions')); ?></th>
+        </tr>
+    </thead>
+    <tbody>
+    <?php foreach ($snippets as $snippet): ?>
+        <?php
+        $id = (int) $snippet['id'];
+        $editUrl = $this->url('admin/code-snippets/edit', ['id' => $id], ['query' => $safeModeQuery]);
+        $hasError = !empty($snippet['last_error_message']);
+        ?>
+        <tr>
+            <td>
+                <?php echo $this->hyperlink($snippet['name'], $editUrl); ?>
+            </td>
+            <td>
+                <?php if ($snippet['active']): ?>
+                    <span class="code-snippets-status is-active"><?php echo $escape($translate('Active')); ?></span>
+                <?php else: ?>
+                    <span class="code-snippets-status is-inactive"><?php echo $escape($translate('Inactive')); ?></span>
+                <?php endif; ?>
+                <?php if ($hasError): ?>
+                    <span class="code-snippets-status is-error"><?php echo $escape($translate('Error')); ?></span>
+                <?php endif; ?>
+            </td>
+            <td><?php echo $escape((string) $snippet['priority']); ?></td>
+            <td><?php echo $escape((string) $snippet['modified']); ?></td>
+            <td>
+                <?php if ($hasError): ?>
+                    <?php
+                    $type = (string) $snippet['last_error_type'];
+                    $shortType = $type !== '' ? basename(str_replace('\\', '/', $type)) : '';
+                    $summary = trim($shortType . ': ' . (string) $snippet['last_error_message']);
+                    if (strlen($summary) > 120) {
+                        $summary = substr($summary, 0, 117) . '...';
+                    }
+                    ?>
+                    <span class="code-snippets-error-summary" title="<?php echo $escapeAttr((string) $snippet['last_error_message']); ?>">
+                        <?php echo $escape($summary); ?>
+                    </span>
+                <?php else: ?>
+                    <?php echo $escape($translate('None')); ?>
+                <?php endif; ?>
+            </td>
+            <td>
+                <ul class="actions">
+                    <li><?php echo $this->hyperlink('', $editUrl, [
+                        'class' => 'o-icon-edit',
+                        'title' => $translate('Edit'),
+                    ]); ?></li>
+                </ul>
+                <?php if ($snippet['active']): ?>
+                <form method="post" action="<?php echo $escapeAttr($this->url('admin/code-snippets/deactivate', ['id' => $id], ['query' => $safeModeQuery])); ?>" class="code-snippets-inline-form">
+                    <input type="hidden" name="csrf" value="<?php echo $escapeAttr($actionCsrf); ?>">
+                    <button type="submit" class="button"><?php echo $escape($translate('Deactivate')); ?></button>
+                </form>
+                <?php else: ?>
+                <form method="post" action="<?php echo $escapeAttr($this->url('admin/code-snippets/activate', ['id' => $id], ['query' => $safeModeQuery])); ?>" class="code-snippets-inline-form">
+                    <input type="hidden" name="csrf" value="<?php echo $escapeAttr($actionCsrf); ?>">
+                    <button type="submit" class="button"><?php echo $escape($translate('Activate')); ?></button>
+                </form>
+                <?php endif; ?>
+                <?php echo $this->hyperlink(
+                    $translate('Delete'),
+                    $this->url('admin/code-snippets/delete', ['id' => $id], ['query' => $safeModeQuery]),
+                    ['class' => 'delete button']
+                ); ?>
+            </td>
+        </tr>
+    <?php endforeach; ?>
+    </tbody>
+</table>
+<?php endif; ?>

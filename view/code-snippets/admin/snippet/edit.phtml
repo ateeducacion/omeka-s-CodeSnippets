@@ -1,0 +1,23 @@
+<?php
+/**
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var \CodeSnippets\Form\SnippetForm $form
+ * @var array<string, mixed> $snippet
+ * @var bool $safeModeActive
+ * @var array<string, string> $safeModeQuery
+ * @var string $actionCsrf
+ */
+$translate = $this->plugin('translate');
+
+$this->headLink()->appendStylesheet($this->assetUrl('css/code-snippets.css', 'CodeSnippets'));
+$this->htmlElement('body')->appendAttribute('class', 'code-snippets edit');
+?>
+<?php echo $this->pageTitle(sprintf($translate('Edit snippet #%s'), $snippet['id'])); ?>
+
+<?php echo $this->partial('code-snippets/admin/snippet/form', [
+    'form' => $form,
+    'snippet' => $snippet,
+    'safeModeActive' => $safeModeActive,
+    'safeModeQuery' => $safeModeQuery,
+    'actionCsrf' => $actionCsrf,
+]); ?>
