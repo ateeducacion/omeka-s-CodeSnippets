@@ -12,6 +12,13 @@ spl_autoload_register(static function (string $class): void {
         'Omeka\\Mvc\\Exception\\PermissionDeniedException' =>
             __DIR__ . '/stubs/Omeka/Mvc/Exception/PermissionDeniedException.php',
         'Omeka\\Stdlib\\Message' => __DIR__ . '/stubs/Omeka/Stdlib/Message.php',
+        'Laminas\\Permissions\\Acl\\Acl' => __DIR__ . '/stubs/Laminas/Permissions/Acl/Acl.php',
+        'Laminas\\Permissions\\Acl\\Role\\RoleInterface' =>
+            __DIR__ . '/stubs/Laminas/Permissions/Acl/Role/RoleInterface.php',
+        'Laminas\\Permissions\\Acl\\Resource\\ResourceInterface' =>
+            __DIR__ . '/stubs/Laminas/Permissions/Acl/Resource/ResourceInterface.php',
+        'Laminas\\Permissions\\Acl\\Assertion\\AssertionInterface' =>
+            __DIR__ . '/stubs/Laminas/Permissions/Acl/Assertion/AssertionInterface.php',
         'Laminas\\Mvc\\MvcEvent' => __DIR__ . '/stubs/Laminas/Mvc/MvcEvent.php',
         'Laminas\\Mvc\\Controller\\AbstractActionController' =>
             __DIR__ . '/stubs/Laminas/Mvc/Controller/AbstractActionController.php',

@@ -23,7 +23,7 @@ Manage PHP snippets from the Omeka S admin interface, without editing a theme or
 - Safe mode kill switches to recover from a snippet that breaks the site
 - Optional REST API at `/api/code_snippets`, reads only unless writes are enabled
 
-Snippets run with the privileges of the Omeka S PHP process, and only `global_admin` may manage them. Read the [security model](#security-model) before using this on a production site.
+Snippets run with the privileges of the Omeka S PHP process. Only `global_admin` may manage them by default; other roles can be allowed in the module configuration, with the consequences described in [who may manage snippets](#who-may-manage-snippets). Read the [security model](#security-model) before using this on a production site.
 
 ## Installation
 
@@ -118,6 +118,26 @@ PHP snippet management is equivalent to executing trusted server-side PHP. A glo
 Only the `global_admin` role may browse, create, edit, activate, deactivate, or delete snippets. That is enforced with Omeka ACL on the controller and on the API adapter (not only by hiding UI). CSRF is required for every state-changing POST. Output is escaped. Request input is never passed to `eval()`.
 
 The REST API applies the same ACL, and additionally keeps writes behind an opt-in setting. See [REST API](#rest-api).
+
+### Who may manage snippets
+
+Out of the box, only `global_admin`. **Admin → Modules → Code Snippets → Configure** can widen that two ways:
+
+- **By role** — tick a role, and every account holding it may manage snippets.
+- **By user** — list specific user ids, and only those accounts may, whatever their role. This is how you give one colleague access without promoting everyone who shares their role. A user id appears in the URL of that user's admin page (`/admin/user/42`), and the configuration page echoes each id back with the account it resolves to, so a mistyped number is visible rather than silently granting nobody.
+
+Either way the grant is the same privileges `global_admin` has for snippets, in the admin interface and over the REST API alike.
+
+There is no smaller useful grant. A role that can edit a snippet can run arbitrary PHP inside Omeka, and that code can do anything the web process can, including promoting its own account:
+
+```php
+$services->get('Omeka\Connection')
+    ->executeStatement("UPDATE user SET role = 'global_admin' WHERE id = 42");
+```
+
+So allowing a role here is not a step below global administrator, it is a second route to it — one that does not show up when you audit who holds the `global_admin` role. Grant it only to people you would already trust with the server, and prefer assigning `global_admin` outright when that is what you really mean, because it is the more visible of the two.
+
+The setting stores role identifiers and ignores any it does not recognise, so removing a role from Omeka, or hand-editing the value, cannot grant access to something that no longer exists. If the setting cannot be read at all, snippet management falls back to `global_admin` only.
 
 This module does **not** sandbox PHP. There is no function blacklist, regex filter, or keyword stripper.
 
