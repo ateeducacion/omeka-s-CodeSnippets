@@ -92,4 +92,56 @@ class SafeModeTest extends TestCase
         $this->assertSame([], $this->safeMode->preservedQuery(['snippets-safe-mode' => '1'], 'editor'));
         $this->assertSame([], $this->safeMode->preservedQuery([], 'global_admin'));
     }
+
+    public function testEmergencyEnvTrueAndYes(): void
+    {
+        putenv('OMEKA_CODE_SNIPPETS_SAFE_MODE=true');
+        $this->assertTrue($this->safeMode->isEmergencySafeMode());
+        putenv('OMEKA_CODE_SNIPPETS_SAFE_MODE=yes');
+        $this->assertTrue($this->safeMode->isEmergencySafeMode());
+        putenv('OMEKA_CODE_SNIPPETS_SAFE_MODE=no');
+        $this->assertFalse($this->safeMode->isEmergencySafeMode());
+    }
+
+    public function testQueryObjectWithGet(): void
+    {
+        $request = new class {
+            public function getQuery($name = null, $default = null)
+            {
+                return new class {
+                    public function get($name)
+                    {
+                        return $name === 'snippets-safe-mode' ? '1' : null;
+                    }
+                };
+            }
+        };
+        $this->assertTrue($this->safeMode->isUrlSafeMode($request, 'global_admin'));
+    }
+
+    public function testQueryScalarFromRequest(): void
+    {
+        $request = new class {
+            public function getQuery($name = null, $default = null)
+            {
+                return $name === 'snippets-safe-mode' ? '1' : $default;
+            }
+        };
+        $this->assertTrue($this->safeMode->isQueryFlagPresent($request));
+    }
+
+    public function testGetSuperglobalFallback(): void
+    {
+        $_GET['snippets-safe-mode'] = '1';
+        try {
+            $this->assertTrue($this->safeMode->isQueryFlagPresent(null));
+        } finally {
+            unset($_GET['snippets-safe-mode']);
+        }
+    }
+
+    public function testDefaultSapiIsCliInPhpunit(): void
+    {
+        $this->assertTrue($this->safeMode->isCli());
+    }
 }

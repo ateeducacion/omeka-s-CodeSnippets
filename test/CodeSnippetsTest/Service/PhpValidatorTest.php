@@ -90,4 +90,26 @@ class PhpValidatorTest extends TestCase
         $this->assertTrue($this->validator->validate($code)->isValid());
         $this->assertFalse($GLOBALS['code_snippets_validator_executed']);
     }
+
+    public function testBomAndCloseTagAreStripped(): void
+    {
+        $code = "\xEF\xBB\xBF<?php\n\$x = 1;\n?>";
+        $this->assertSame("\$x = 1;", $this->validator->normalize($code));
+    }
+
+    public function testShortOpenTagIsStripped(): void
+    {
+        $this->assertSame("\$x = 1;", $this->validator->normalize("<?\n\$x = 1;"));
+    }
+
+    public function testCarriageReturnAfterOpenTag(): void
+    {
+        $this->assertSame("\$x = 1;", $this->validator->normalize("<?php\r\n\$x = 1;"));
+    }
+
+    public function testSyntaxErrorLineIsAtLeastOne(): void
+    {
+        $result = $this->validator->validate('<?php');
+        $this->assertFalse($result->isValid());
+    }
 }

@@ -158,4 +158,116 @@ class SnippetRepositoryTest extends TestCase
         }
         $this->assertSame(['Everywhere', 'Admin only'], $adminNames);
     }
+
+    public function testFindAllReturnsHydratedRows(): void
+    {
+        $this->repository->create(['name' => 'A', 'code' => '$a = 1;']);
+        $this->repository->create(['name' => 'B', 'code' => '$b = 1;']);
+        $all = $this->repository->findAll();
+        $this->assertCount(2, $all);
+        $this->assertSame('A', $all[0]['name']);
+    }
+
+    public function testEmptyNameIsRejected(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->repository->create(['name' => '  ', 'code' => '$x = 1;']);
+    }
+
+    public function testLongNameIsTruncated(): void
+    {
+        $name = str_repeat('n', 300);
+        $created = $this->repository->create(['name' => $name, 'code' => '$x = 1;']);
+        $this->assertSame(255, strlen($created['name']));
+    }
+
+    public function testEmptyDescriptionBecomesNull(): void
+    {
+        $created = $this->repository->create([
+            'name' => 'Desc',
+            'description' => '',
+            'code' => '$x = 1;',
+        ]);
+        $this->assertNull($created['description']);
+    }
+
+    public function testPriorityNormalization(): void
+    {
+        $fromString = $this->repository->create([
+            'name' => 'S',
+            'code' => '$x = 1;',
+            'priority' => '-3',
+        ]);
+        $this->assertSame(-3, $fromString['priority']);
+        $fromEmpty = $this->repository->create([
+            'name' => 'E',
+            'code' => '$x = 1;',
+            'priority' => '',
+        ]);
+        $this->assertSame(10, $fromEmpty['priority']);
+        $fromNumeric = $this->repository->create([
+            'name' => 'N',
+            'code' => '$x = 1;',
+            'priority' => '7.9',
+        ]);
+        $this->assertSame(7, $fromNumeric['priority']);
+    }
+
+    public function testInvalidPriorityRejected(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->repository->create([
+            'name' => 'Bad',
+            'code' => '$x = 1;',
+            'priority' => 'late',
+        ]);
+    }
+
+    public function testTransactionalCommitAndRollback(): void
+    {
+        $created = $this->repository->transactional(function () {
+            return $this->repository->create(['name' => 'Tx', 'code' => '$x = 1;']);
+        });
+        $this->assertSame('Tx', $created['name']);
+
+        try {
+            $this->repository->transactional(function () {
+                $this->repository->create(['name' => 'Nope', 'code' => '$x = 1;']);
+                throw new \RuntimeException('boom');
+            });
+            $this->fail('Expected RuntimeException');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame('boom', $exception->getMessage());
+        }
+        $this->assertCount(1, $this->repository->findAll());
+    }
+
+    public function testRecordErrorTruncatesType(): void
+    {
+        $this->repository->create(['name' => 'Err', 'code' => '$x = 1;']);
+        $this->repository->recordError(1, str_repeat('E', 300), 'msg', null);
+        $found = $this->repository->find(1);
+        $this->assertSame(255, strlen((string) $found['last_error_type']));
+        $this->assertNull($found['last_error_line']);
+    }
+
+    public function testUpdatePartialFields(): void
+    {
+        $this->repository->create([
+            'name' => 'Old',
+            'description' => 'D',
+            'code' => '$x = 1;',
+            'priority' => 1,
+            'active' => false,
+        ]);
+        $updated = $this->repository->update(1, [
+            'description' => 'New d',
+            'priority' => 2,
+            'active' => true,
+        ]);
+        $this->assertSame('Old', $updated['name']);
+        $this->assertSame('New d', $updated['description']);
+        $this->assertSame(2, $updated['priority']);
+        $this->assertTrue($updated['active']);
+    }
 }
