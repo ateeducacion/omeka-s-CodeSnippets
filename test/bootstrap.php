@@ -25,6 +25,7 @@ spl_autoload_register(static function (string $class): void {
         'Omeka\\Api\\Adapter\\AbstractAdapter' => __DIR__ . '/stubs/Omeka/Api/Adapter/AbstractAdapter.php',
         'Omeka\\Api\\Representation\\AbstractResourceRepresentation' =>
             __DIR__ . '/stubs/Omeka/Api/Representation/AbstractResourceRepresentation.php',
+        'Omeka\\Stdlib\\ErrorStore' => __DIR__ . '/stubs/Omeka/Stdlib/ErrorStore.php',
         'Omeka\\Api\\Exception\\NotFoundException' =>
             __DIR__ . '/stubs/Omeka/Api/Exception/NotFoundException.php',
         'Omeka\\Api\\Exception\\PermissionDeniedException' =>

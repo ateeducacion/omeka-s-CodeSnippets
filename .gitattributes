@@ -1,6 +1,5 @@
 .aider*                  export-ignore
 .DS_Store                export-ignore
-/.distignore             export-ignore
 /.editorconfig           export-ignore
 /.env                    export-ignore
 /.gitattributes          export-ignore
@@ -14,6 +13,7 @@ blueprint.json           export-ignore
 /language/*.pot          export-ignore
 /test/                   export-ignore
 /vendor/                 export-ignore
+codecov.yml              export-ignore
 composer.lock            export-ignore
 docker-compose.yml       export-ignore
 Makefile                 export-ignore

@@ -251,4 +251,37 @@ class SnippetAdapterTest extends TestCase
     {
         $this->assertNull($this->adapter->getRepresentation(null));
     }
+
+    /**
+     * Omeka serializes the ErrorStore, not the message, so an empty store
+     * would answer 422 without telling the client what was wrong.
+     */
+    public function testValidationFailuresCarryAReasonInTheErrorStore(): void
+    {
+        $adapter = $this->makeAdapter(true);
+
+        try {
+            $adapter->create($this->request(Request::CREATE, null, [
+                'name' => 'Broken',
+                'code' => 'this is not php',
+                'active' => true,
+            ]));
+            $this->fail('Expected a ValidationException.');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('code', $e->getErrorStore()->getErrors());
+            $this->assertNotEmpty($e->getErrorStore()->getErrors()['code']);
+        }
+    }
+
+    public function testMissingRequiredFieldIsReportedUnderThatField(): void
+    {
+        $adapter = $this->makeAdapter(true);
+
+        try {
+            $adapter->create($this->request(Request::CREATE, null, ['code' => '$x = 1;']));
+            $this->fail('Expected a ValidationException.');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey('name', $e->getErrorStore()->getErrors());
+        }
+    }
 }

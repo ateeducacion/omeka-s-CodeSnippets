@@ -15,6 +15,7 @@ use Omeka\Api\Exception\PermissionDeniedException;
 use Omeka\Api\Exception\ValidationException;
 use Omeka\Api\Request;
 use Omeka\Api\Response;
+use Omeka\Stdlib\ErrorStore;
 
 /**
  * Exposes snippets on the Omeka S REST API at /api/code_snippets.
@@ -84,7 +85,7 @@ class SnippetAdapter extends AbstractAdapter
         $data = $this->writableData($request->getContent());
         foreach (['name', 'code'] as $required) {
             if (!array_key_exists($required, $data)) {
-                throw new ValidationException(sprintf('The "%s" field is required.', $required));
+                throw $this->validationError($required, sprintf('The "%s" field is required.', $required));
             }
         }
 
@@ -187,10 +188,26 @@ class SnippetAdapter extends AbstractAdapter
         } catch (SnippetNotFoundException $e) {
             throw new NotFoundException($e->getMessage(), 0, $e);
         } catch (InvalidSyntaxException $e) {
-            throw new ValidationException($e->getMessage(), 0, $e);
+            throw $this->validationError('code', $e->getMessage(), $e);
         } catch (\InvalidArgumentException $e) {
-            throw new ValidationException($e->getMessage(), 0, $e);
+            throw $this->validationError('request', $e->getMessage(), $e);
         }
+    }
+
+    /**
+     * Omeka serializes a validation error from its ErrorStore, not from the
+     * exception message, so an empty store answers 422 with no reason.
+     */
+    private function validationError(
+        string $key,
+        string $message,
+        ?\Throwable $previous = null
+    ): ValidationException {
+        $exception = new ValidationException($message, 0, $previous);
+        $errorStore = new ErrorStore();
+        $errorStore->addError($key, $message);
+        $exception->setErrorStore($errorStore);
+        return $exception;
     }
 
     private function snippetService(): SnippetService
