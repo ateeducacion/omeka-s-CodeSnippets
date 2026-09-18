@@ -173,4 +173,48 @@ class LifecycleTest extends TestCase
         $this->assertSame(SnippetExecutor::PRIORITY, $events->attached[0][2]);
         $this->assertSame([$executor, 'executeFromMvcEvent'], $events->attached[0][1]);
     }
+
+    public function testUpgradeSkipsTheColumnWhenTheSchemaAlreadyHasIt(): void
+    {
+        $connection = new class {
+            /** @var array<int, string> */
+            public $sql = [];
+            /** @var array<string, object> */
+            public $columns = [];
+
+            public function exec($sql)
+            {
+                $this->sql[] = (string) $sql;
+            }
+
+            public function getSchemaManager()
+            {
+                return new class ($this->columns) {
+                    /** @var array<string, object> */
+                    private $columns;
+
+                    public function __construct(array $columns)
+                    {
+                        $this->columns = $columns;
+                    }
+
+                    public function listTableColumns($table)
+                    {
+                        return $this->columns;
+                    }
+                };
+            }
+        };
+        $locator = $this->createMock(\Laminas\ServiceManager\ServiceLocatorInterface::class);
+        $locator->method('get')->willReturn($connection);
+        $module = new Module();
+
+        $module->upgrade('0.0.0', '0.1.0', $locator);
+        $this->assertCount(1, $connection->sql);
+        $this->assertStringContainsString('run_scope', $connection->sql[0]);
+
+        $connection->columns = ['run_scope' => new \stdClass()];
+        $module->upgrade('0.0.0', '0.1.0', $locator);
+        $this->assertCount(1, $connection->sql);
+    }
 }

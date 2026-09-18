@@ -48,4 +48,10 @@ class SnippetScopeTest extends TestCase
         );
         $this->assertSame(SnippetScope::FRONT_END, SnippetScope::fromMvcEvent(null));
     }
+
+    public function testShortLabelsCoverEveryScope(): void
+    {
+        $this->assertSame(SnippetScope::all(), array_keys(SnippetScope::shortLabels()));
+        $this->assertSame('Everywhere', SnippetScope::shortLabels()[SnippetScope::GLOBAL]);
+    }
 }

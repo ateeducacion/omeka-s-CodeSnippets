@@ -270,4 +270,11 @@ class SnippetRepositoryTest extends TestCase
         $this->assertSame(2, $updated['priority']);
         $this->assertTrue($updated['active']);
     }
+
+    public function testUpdateNormalizesRunScope(): void
+    {
+        $this->repository->create(['name' => 'A', 'code' => '$x = 1;']);
+        $this->assertSame('admin', $this->repository->update(1, ['run_scope' => 'admin'])['run_scope']);
+        $this->assertSame('global', $this->repository->update(1, ['run_scope' => 'nope'])['run_scope']);
+    }
 }
