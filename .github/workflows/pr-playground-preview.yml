@@ -24,12 +24,14 @@ jobs:
             const marker = '<!-- omeka-s-playground-preview -->';
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const headRef = context.payload.pull_request.head.ref;
+            const headSha = context.payload.pull_request.head.sha;
             const prNumber = context.payload.pull_request.number;
 
-            // Read the root blueprint and replace the module URL with the PR branch ZIP
+            // Pin the ZIP to the PR head SHA. Playground caches add-ons by
+            // download URL; a branch ZIP never changes, so it would keep an
+            // old extract (e.g. still requesting prism.min.css).
             const blueprint = JSON.parse(fs.readFileSync('blueprint.json', 'utf8'));
-            const prZipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/${headRef}.zip`;
+            const prZipUrl = `https://github.com/${owner}/${repo}/archive/${headSha}.zip`;
             if (blueprint.modules) {
               for (const mod of blueprint.modules) {
                 if (mod.source && mod.source.url && mod.source.url.includes(`${owner}/${repo}`)) {
@@ -60,7 +62,8 @@ jobs:
               '</a><br>',
               `<small><a href="${playgroundUrl}">Try this PR in your browser</a></small>`,
               '',
-              'This preview loads the plugin directly from the PR branch ZIP in Omeka-S Playground.',
+              `This preview loads commit \`${headSha.slice(0, 7)}\` (not a cached branch ZIP).`,
+              'If CSS 404s mention `prism.min.css`, you are still on an old Playground session — open this link in a new tab or a private window.',
             ].join('\n');
 
             // Search for an existing comment with the marker
