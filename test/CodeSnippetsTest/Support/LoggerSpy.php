@@ -13,4 +13,9 @@ class LoggerSpy
     {
         $this->messages[] = (string) $message;
     }
+
+    public function info($message): void
+    {
+        $this->messages[] = (string) $message;
+    }
 }

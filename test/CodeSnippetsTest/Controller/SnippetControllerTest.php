@@ -374,6 +374,18 @@ class SnippetControllerTest extends TestCase
         $this->assertSame('good-token', $view->variables['actionCsrf']);
     }
 
+    public function testDeleteGetSidebarRendersConfirmPartial(): void
+    {
+        $this->service->create(['name' => 'Soon gone', 'code' => '$x = 1;']);
+        $harness = $this->harness();
+        $harness->params->route = ['id' => '1'];
+        $harness->request->query = ['sidebar' => '1'];
+        $view = $harness->controller->deleteAction();
+        $this->assertInstanceOf(ViewModel::class, $view);
+        $this->assertSame('code-snippets/admin/snippet/delete-confirm', $view->template);
+        $this->assertTrue($view->terminal);
+    }
+
     public function testDeletePostRejectsInvalidCsrf(): void
     {
         $this->service->create(['name' => 'Keep', 'code' => '$x = 1;']);

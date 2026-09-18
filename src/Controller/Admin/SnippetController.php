@@ -208,12 +208,21 @@ class SnippetController extends AbstractActionController
             return $this->redirectToIndex();
         }
 
-        return new ViewModel([
+        $view = new ViewModel([
             'snippet' => $snippet,
             'safeModeActive' => $this->isUrlSafeMode(),
             'safeModeQuery' => $this->safeModeQuery(),
             'actionCsrf' => $this->actionCsrf->getToken(),
         ]);
+
+        // Browse rows load the confirmation into the admin sidebar; the plain
+        // URL still renders the full page for requests without JavaScript.
+        if ($this->getRequest()->getQuery('sidebar')) {
+            $view->setTemplate('code-snippets/admin/snippet/delete-confirm');
+            $view->setTerminal(true);
+        }
+
+        return $view;
     }
 
     private function createForm(): SnippetForm
