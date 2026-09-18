@@ -1,0 +1,26 @@
+<?php
+/**
+ * Sidebar delete confirmation, mirroring Omeka's common/delete-confirm partial.
+ *
+ * @var \Laminas\View\Renderer\PhpRenderer $this
+ * @var array<string, mixed> $snippet
+ * @var array<string, string> $safeModeQuery
+ * @var string $actionCsrf
+ */
+$translate = $this->plugin('translate');
+$escape = $this->plugin('escapeHtml');
+$escapeAttr = $this->plugin('escapeHtmlAttr');
+?>
+<div id="sidebar-confirm">
+    <h3><?php echo $escape($translate('Delete snippet')); ?></h3>
+    <p>
+        <?php echo $escape(sprintf(
+            $translate('Are you sure you would like to delete the snippet "%s"? This cannot be undone.'),
+            $snippet['name']
+        )); ?>
+    </p>
+    <form method="post" action="<?php echo $escapeAttr($this->url('admin/code-snippets/delete', ['id' => $snippet['id']], ['query' => $safeModeQuery])); ?>">
+        <input type="hidden" name="csrf" value="<?php echo $escapeAttr($actionCsrf); ?>">
+        <input type="submit" value="<?php echo $escapeAttr($translate('Confirm delete')); ?>">
+    </form>
+</div>

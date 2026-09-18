@@ -58,9 +58,39 @@
     color: #991b1b;
 }
 
-.code-snippets-inline-form {
-    display: inline-block;
-    margin: 0 0.25rem 0 0;
+/* Omeka's admin tables are table-layout: fixed and give the first column 50%,
+   so the columns only respond to explicit widths. Trim the name column to make
+   room for the actions, as core does on its own browse pages. */
+.code-snippets.browse th:first-child,
+.code-snippets.browse td:first-child {
+    width: 30%;
+}
+
+.code-snippets.browse th:nth-child(4),
+.code-snippets.browse td:nth-child(4) {
+    width: 13%;
+}
+
+.code-snippets.browse th:last-child,
+.code-snippets.browse td:last-child {
+    width: 26%;
+}
+
+/* The labelled state button cannot live in ul.actions: core hides the text of
+   any button in there. Keep it beside the icon list on a single row instead. */
+.code-snippets-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+.code-snippets-row-actions .actions {
+    margin: 0;
+}
+
+.code-snippets-row-actions button::before {
+    margin-right: 0.35rem;
 }
 
 .code-snippets-error-summary {

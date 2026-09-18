@@ -6,6 +6,7 @@ namespace CodeSnippets;
 
 use CodeSnippets\Controller\Admin\SnippetController;
 use CodeSnippets\Db\Schema;
+use CodeSnippets\Install\ExampleSnippets;
 use CodeSnippets\Service\SnippetExecutor;
 use Laminas\Mvc\MvcEvent;
 use Laminas\ServiceManager\ServiceLocatorInterface;
@@ -91,9 +92,10 @@ class Module extends AbstractModule
 
     public function install(ServiceLocatorInterface $serviceLocator): void
     {
-        $this->loadSchemaClass();
+        $this->loadInstallClasses();
         $connection = $serviceLocator->get('Omeka\Connection');
         $connection->exec(Schema::createTableSql());
+        ExampleSnippets::seed($connection);
     }
 
     public function upgrade($oldVersion, $newVersion, ServiceLocatorInterface $serviceLocator): void
@@ -131,6 +133,14 @@ class Module extends AbstractModule
     {
         if (!class_exists(Schema::class, false)) {
             require_once __DIR__ . '/src/Db/Schema.php';
+        }
+    }
+
+    private function loadInstallClasses(): void
+    {
+        $this->loadSchemaClass();
+        if (!class_exists(ExampleSnippets::class, false)) {
+            require_once __DIR__ . '/src/Install/ExampleSnippets.php';
         }
     }
 }
