@@ -89,31 +89,43 @@ $this->htmlElement('body')->appendAttribute('class', 'code-snippets browse');
                 <?php endif; ?>
             </td>
             <td>
+                <?php if ($snippet['active']): ?>
+                <form method="post" action="<?php echo $escapeAttr($this->url('admin/code-snippets/deactivate', ['id' => $id], ['query' => $safeModeQuery])); ?>" class="code-snippets-inline-form">
+                    <input type="hidden" name="csrf" value="<?php echo $escapeAttr($actionCsrf); ?>">
+                    <button type="submit" class="o-icon-deactivate"><?php echo $escape($translate('Deactivate')); ?></button>
+                </form>
+                <?php else: ?>
+                <form method="post" action="<?php echo $escapeAttr($this->url('admin/code-snippets/activate', ['id' => $id], ['query' => $safeModeQuery])); ?>" class="code-snippets-inline-form">
+                    <input type="hidden" name="csrf" value="<?php echo $escapeAttr($actionCsrf); ?>">
+                    <button type="submit" class="o-icon-activate"><?php echo $escape($translate('Activate')); ?></button>
+                </form>
+                <?php endif; ?>
                 <ul class="actions">
                     <li><?php echo $this->hyperlink('', $editUrl, [
                         'class' => 'o-icon-edit',
                         'title' => $translate('Edit'),
                     ]); ?></li>
+                    <li><?php echo $this->hyperlink('', '#', [
+                        'data-sidebar-content-url' => $this->url(
+                            'admin/code-snippets/delete',
+                            ['id' => $id],
+                            ['query' => $safeModeQuery + ['sidebar' => '1']]
+                        ),
+                        'class' => 'o-icon-delete sidebar-content',
+                        'title' => $translate('Delete'),
+                    ]); ?></li>
                 </ul>
-                <?php if ($snippet['active']): ?>
-                <form method="post" action="<?php echo $escapeAttr($this->url('admin/code-snippets/deactivate', ['id' => $id], ['query' => $safeModeQuery])); ?>" class="code-snippets-inline-form">
-                    <input type="hidden" name="csrf" value="<?php echo $escapeAttr($actionCsrf); ?>">
-                    <button type="submit" class="button"><?php echo $escape($translate('Deactivate')); ?></button>
-                </form>
-                <?php else: ?>
-                <form method="post" action="<?php echo $escapeAttr($this->url('admin/code-snippets/activate', ['id' => $id], ['query' => $safeModeQuery])); ?>" class="code-snippets-inline-form">
-                    <input type="hidden" name="csrf" value="<?php echo $escapeAttr($actionCsrf); ?>">
-                    <button type="submit" class="button"><?php echo $escape($translate('Activate')); ?></button>
-                </form>
-                <?php endif; ?>
-                <?php echo $this->hyperlink(
-                    $translate('Delete'),
-                    $this->url('admin/code-snippets/delete', ['id' => $id], ['query' => $safeModeQuery]),
-                    ['class' => 'delete button']
-                ); ?>
             </td>
         </tr>
     <?php endforeach; ?>
     </tbody>
 </table>
+
+<div class="sidebar">
+    <?php echo $this->hyperlink('', '#', [
+        'class' => 'sidebar-close o-icon-close',
+        'title' => $translate('Close'),
+    ]); ?>
+    <div class="sidebar-content"></div>
+</div>
 <?php endif; ?>

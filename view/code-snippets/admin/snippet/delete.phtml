@@ -1,5 +1,7 @@
 <?php
 /**
+ * Full-page fallback for requests that cannot open the admin sidebar.
+ *
  * @var \Laminas\View\Renderer\PhpRenderer $this
  * @var array<string, mixed> $snippet
  * @var bool $safeModeActive
@@ -8,7 +10,6 @@
  */
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
-$escapeAttr = $this->plugin('escapeHtmlAttr');
 
 $this->headLink()->appendStylesheet($this->assetUrl('css/code-snippets.css', 'CodeSnippets'));
 $this->htmlElement('body')->appendAttribute('class', 'code-snippets delete');
@@ -21,22 +22,14 @@ $this->htmlElement('body')->appendAttribute('class', 'code-snippets delete');
 </div>
 <?php endif; ?>
 
-<p>
-    <?php echo $escape(sprintf(
-        $translate('Are you sure you want to delete the snippet "%s" (ID %s)? This cannot be undone.'),
-        $snippet['name'],
-        $snippet['id']
-    )); ?>
-</p>
+<?php echo $this->partial('code-snippets/admin/snippet/delete-confirm', [
+    'snippet' => $snippet,
+    'safeModeQuery' => $safeModeQuery,
+    'actionCsrf' => $actionCsrf,
+]); ?>
 
-<form method="post" action="<?php echo $escapeAttr($this->url('admin/code-snippets/delete', ['id' => $snippet['id']], ['query' => $safeModeQuery])); ?>">
-    <input type="hidden" name="csrf" value="<?php echo $escapeAttr($actionCsrf); ?>">
-    <div id="page-actions">
-        <button type="submit" class="delete"><?php echo $escape($translate('Delete')); ?></button>
-        <?php echo $this->hyperlink(
-            $translate('Cancel'),
-            $this->url('admin/code-snippets', [], ['query' => $safeModeQuery]),
-            ['class' => 'button']
-        ); ?>
-    </div>
-</form>
+<?php echo $this->hyperlink(
+    $translate('Cancel'),
+    $this->url('admin/code-snippets', [], ['query' => $safeModeQuery]),
+    ['class' => 'button']
+); ?>
