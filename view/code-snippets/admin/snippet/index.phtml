@@ -89,13 +89,14 @@ $this->htmlElement('body')->appendAttribute('class', 'code-snippets browse');
                 <?php endif; ?>
             </td>
             <td>
+                <div class="code-snippets-row-actions">
                 <?php if ($snippet['active']): ?>
-                <form method="post" action="<?php echo $escapeAttr($this->url('admin/code-snippets/deactivate', ['id' => $id], ['query' => $safeModeQuery])); ?>" class="code-snippets-inline-form">
+                <form method="post" action="<?php echo $escapeAttr($this->url('admin/code-snippets/deactivate', ['id' => $id], ['query' => $safeModeQuery])); ?>">
                     <input type="hidden" name="csrf" value="<?php echo $escapeAttr($actionCsrf); ?>">
                     <button type="submit" class="o-icon-deactivate"><?php echo $escape($translate('Deactivate')); ?></button>
                 </form>
                 <?php else: ?>
-                <form method="post" action="<?php echo $escapeAttr($this->url('admin/code-snippets/activate', ['id' => $id], ['query' => $safeModeQuery])); ?>" class="code-snippets-inline-form">
+                <form method="post" action="<?php echo $escapeAttr($this->url('admin/code-snippets/activate', ['id' => $id], ['query' => $safeModeQuery])); ?>">
                     <input type="hidden" name="csrf" value="<?php echo $escapeAttr($actionCsrf); ?>">
                     <button type="submit" class="o-icon-activate"><?php echo $escape($translate('Activate')); ?></button>
                 </form>
@@ -115,6 +116,7 @@ $this->htmlElement('body')->appendAttribute('class', 'code-snippets browse');
                         'title' => $translate('Delete'),
                     ]); ?></li>
                 </ul>
+                </div>
             </td>
         </tr>
     <?php endforeach; ?>
