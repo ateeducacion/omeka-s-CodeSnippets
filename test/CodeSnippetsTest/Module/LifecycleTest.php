@@ -110,9 +110,10 @@ class LifecycleTest extends TestCase
         $module->upgrade('0.0.0', '0.1.0', $locator);
         $module->uninstall($locator);
 
-        $this->assertCount(2, $connection->sql);
+        $this->assertCount(3, $connection->sql);
         $this->assertStringContainsString('CREATE TABLE', $connection->sql[0]);
-        $this->assertStringContainsString('DROP TABLE', $connection->sql[1]);
+        $this->assertStringContainsString('run_scope', $connection->sql[1]);
+        $this->assertStringContainsString('DROP TABLE', $connection->sql[2]);
     }
 
     public function testOnBootstrapRegistersAclAndExecutor(): void

@@ -1,24 +1,8 @@
 (function () {
-    function boot() {
-        initEditor();
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', boot);
-    } else {
-        boot();
-    }
-
-    function initEditor() {
-    if (window.__codeSnippetsEditorInit) {
-        return;
-    }
     var textarea = document.getElementById('code-snippets-code');
     if (!textarea || typeof CodeJar !== 'function') {
         return;
     }
-    window.__codeSnippetsEditorInit = true;
-
 
     var KEYWORDS = {
         abstract: 1, and: 1, array: 1, as: 1, break: 1, callable: 1, case: 1,
@@ -145,7 +129,6 @@
     wrapEl.setAttribute('spellcheck', 'false');
     wrapEl.setAttribute('aria-label', textarea.getAttribute('aria-label') || 'PHP code');
     textarea.parentNode.insertBefore(wrapEl, textarea);
-    wrapEl.textContent = textarea.value;
     textarea.setAttribute('hidden', 'hidden');
     textarea.tabIndex = -1;
 
@@ -161,5 +144,8 @@
     jar.onUpdate(function (code) {
         textarea.value = code;
     });
-    }
+
+    // CodeJar only highlights on keyup; without this the editor loads as plain
+    // text with no gutter until the first keystroke.
+    jar.updateCode(textarea.value);
 })();

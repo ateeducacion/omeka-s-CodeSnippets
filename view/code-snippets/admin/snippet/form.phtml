@@ -16,18 +16,7 @@ $this->headLink()->appendStylesheet($this->assetUrl('vendor/codejar-linenumbers/
 $this->headScript()->appendFile($this->assetUrl('vendor/codejar/codejar.js', 'CodeSnippets'), 'text/javascript', ['defer' => true]);
 $this->headScript()->appendFile($this->assetUrl('vendor/codejar-linenumbers/codejar-linenumbers.js', 'CodeSnippets'), 'text/javascript', ['defer' => true]);
 $this->headScript()->appendFile($this->assetUrl('js/code-snippets-editor.js', 'CodeSnippets'), 'text/javascript', ['defer' => true]);
-
-$csCss = \CodeSnippets\View\EditorAssets::contents('asset/css/code-snippets.css');
-$csLinesCss = \CodeSnippets\View\EditorAssets::contents('asset/vendor/codejar-linenumbers/codejar-linenumbers.css');
-$csJar = \CodeSnippets\View\EditorAssets::contents('asset/vendor/codejar/codejar.js');
-$csLines = \CodeSnippets\View\EditorAssets::contents('asset/vendor/codejar-linenumbers/codejar-linenumbers.js');
-$csEditor = \CodeSnippets\View\EditorAssets::contents('asset/js/code-snippets-editor.js');
 ?>
-<?php if ($csCss !== '' || $csLinesCss !== ''): ?>
-<style>
-<?php echo $csCss . "\n" . $csLinesCss; ?>
-</style>
-<?php endif; ?>
 
 <?php if (!empty($safeModeActive)): ?>
 <div class="messages" role="status">
@@ -98,10 +87,4 @@ echo $this->formCollection($form, false);
         <button type="submit" class="delete"><?php echo $escape($translate('Delete')); ?></button>
     </form>
 </div>
-<?php endif; ?>
-
-<?php if ($csJar !== '' || $csEditor !== ''): ?>
-<script>
-<?php echo $csJar . "\n" . $csLines . "\n" . $csEditor; ?>
-</script>
 <?php endif; ?>
