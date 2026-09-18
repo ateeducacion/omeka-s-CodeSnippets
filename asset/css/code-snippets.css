@@ -32,6 +32,8 @@
 .code-snippets-inline-form {
     display: inline-block;
     margin: 0 0.25rem 0 0;
+    vertical-align: middle;
+    white-space: nowrap;
 }
 
 .code-snippets-error-summary {
