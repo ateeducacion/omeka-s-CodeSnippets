@@ -1,12 +1,12 @@
 # Vendored editor assets
 
-Omeka S ships CKEditor for HTML, not a PHP code editor. These files are copied
-into the module so the snippet form can highlight PHP without a CDN.
+Omeka S ships CKEditor for HTML, not a PHP highlighter. CodeJar is a small
+contenteditable editor; it does **not** color tokens by itself. Its API takes
+a highlight callback. This module uses a tiny PHP tokenizer in
+`asset/js/code-snippets-editor.js` instead of Prism or highlight.js.
+
+The add/edit form inlines CodeJar, the tokenizer, and the CSS so the editor
+still works when extra `/modules/.../asset/...` requests 404 (Omeka S Playground).
 
 - `codejar/` — [CodeJar](https://github.com/antonmedv/codejar) 4.2.0, MIT.
-  `export` was rewritten to `window.CodeJar` so Omeka's classic `headScript` can load it.
-- `prism/` — [PrismJS](https://github.com/PrismJS/prism) 1.29.0, MIT.
-  Core plus `markup-templating` and `php`, with the default light theme.
-
-The snippet `<textarea>` remains the form field. If JavaScript fails, the
-textarea stays usable.
+  `export` was rewritten to `window.CodeJar` so it can run as a classic script.

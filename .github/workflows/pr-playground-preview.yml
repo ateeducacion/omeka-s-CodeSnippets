@@ -48,7 +48,7 @@ jobs:
             }
 
             const encoded = toBase64url(JSON.stringify(blueprint));
-            const playgroundUrl = `https://ateeducacion.github.io/omeka-s-playground/?blueprint-data=${encoded}`;
+            const playgroundUrl = `https://ateeducacion.github.io/omeka-s-playground/?blueprint=${encoded}`;
             const imageUrl = 'https://raw.githubusercontent.com/ateeducacion/omeka-s-playground/refs/heads/main/ogimage.png';
 
             const body = [

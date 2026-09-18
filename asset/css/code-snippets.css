@@ -25,6 +25,12 @@
     outline-offset: -1px;
 }
 
+.code-snippets-editor .cs-keyword { color: #0451a5; font-weight: 600; }
+.code-snippets-editor .cs-string { color: #a31515; }
+.code-snippets-editor .cs-comment { color: #008000; font-style: italic; }
+.code-snippets-editor .cs-variable { color: #001080; }
+.code-snippets-editor .cs-number { color: #098658; }
+
 .code-snippets-status {
     display: inline-block;
     margin-right: 0.4rem;

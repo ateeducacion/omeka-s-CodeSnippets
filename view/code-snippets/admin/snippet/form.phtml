@@ -11,14 +11,20 @@ $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 $escapeAttr = $this->plugin('escapeHtmlAttr');
 
-$this->headLink()->appendStylesheet($this->assetUrl('vendor/prism/prism.min.css', 'CodeSnippets'));
-$this->headScript()->appendScript('window.Prism=window.Prism||{};window.Prism.manual=true;');
-$this->headScript()->appendFile($this->assetUrl('vendor/prism/prism.min.js', 'CodeSnippets'));
-$this->headScript()->appendFile($this->assetUrl('vendor/prism/prism-markup-templating.min.js', 'CodeSnippets'));
-$this->headScript()->appendFile($this->assetUrl('vendor/prism/prism-php.min.js', 'CodeSnippets'));
-$this->headScript()->appendFile($this->assetUrl('vendor/codejar/codejar.js', 'CodeSnippets'));
-$this->headScript()->appendFile($this->assetUrl('js/code-snippets-editor.js', 'CodeSnippets'));
+// Inline editor CSS/JS so highlighting still works when extra asset GETs
+// 404 (Omeka S Playground, broken static maps). Files remain on disk too.
+$csRoot = dirname(__DIR__, 4);
+$csRead = static function ($relative) use ($csRoot) {
+    $path = $csRoot . '/' . $relative;
+    return is_readable($path) ? file_get_contents($path) : '';
+};
+$csCss = $csRead('asset/css/code-snippets.css');
+$csJar = $csRead('asset/vendor/codejar/codejar.js');
+$csEditor = $csRead('asset/js/code-snippets-editor.js');
 ?>
+<?php if ($csCss !== ''): ?>
+<style><?php echo $csCss; ?></style>
+<?php endif; ?>
 
 <?php if (!empty($safeModeActive)): ?>
 <div class="messages" role="status">
@@ -89,4 +95,11 @@ echo $this->formCollection($form, false);
         <button type="submit" class="delete"><?php echo $escape($translate('Delete')); ?></button>
     </form>
 </div>
+<?php endif; ?>
+
+<?php if ($csJar !== '' || $csEditor !== ''): ?>
+<script>
+<?php echo $csJar; ?>
+<?php echo $csEditor; ?>
+</script>
 <?php endif; ?>
