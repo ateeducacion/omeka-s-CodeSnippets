@@ -33,6 +33,7 @@ class Schema
             . '`code` LONGTEXT NOT NULL,'
             . '`priority` INT NOT NULL DEFAULT 10,'
             . '`active` TINYINT(1) NOT NULL DEFAULT 0,'
+            . '`run_scope` VARCHAR(32) NOT NULL DEFAULT \'global\','
             . '`created` DATETIME NOT NULL,'
             . '`modified` DATETIME NOT NULL,'
             . '`last_error_type` VARCHAR(255) DEFAULT NULL,'
@@ -59,6 +60,7 @@ class Schema
             . 'code TEXT NOT NULL,'
             . 'priority INTEGER NOT NULL DEFAULT 10,'
             . 'active INTEGER NOT NULL DEFAULT 0,'
+            . "run_scope VARCHAR(32) NOT NULL DEFAULT 'global',"
             . 'created TEXT NOT NULL,'
             . 'modified TEXT NOT NULL,'
             . 'last_error_type VARCHAR(255) DEFAULT NULL,'
@@ -82,7 +84,19 @@ class Schema
 
     public static function selectActiveOrderedSql(): string
     {
-        return 'SELECT id, name, code, priority FROM `' . self::TABLE . '`'
+        return 'SELECT id, name, code, priority, run_scope FROM `' . self::TABLE . '`'
             . ' WHERE active = ? ORDER BY priority ASC, id ASC';
+    }
+
+    public static function selectActiveOrderedForScopeSql(): string
+    {
+        return 'SELECT id, name, code, priority, run_scope FROM `' . self::TABLE . '`'
+            . ' WHERE active = ? AND run_scope IN (?, ?) ORDER BY priority ASC, id ASC';
+    }
+
+    public static function addRunScopeColumnSql(): string
+    {
+        return 'ALTER TABLE `' . self::TABLE . '`'
+            . " ADD `run_scope` VARCHAR(32) NOT NULL DEFAULT 'global'";
     }
 }

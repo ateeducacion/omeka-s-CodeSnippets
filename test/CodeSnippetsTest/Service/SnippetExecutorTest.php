@@ -231,6 +231,75 @@ class SnippetExecutorTest extends TestCase
         $this->assertLessThan(1, SnippetExecutor::PRIORITY);
     }
 
+    public function testAdminScopeDoesNotRunOnFrontEnd(): void
+    {
+        $this->repository->create([
+            'name' => 'admin-only',
+            'code' => '$GLOBALS["code_snippets_exec_log"][] = "admin";',
+            'active' => true,
+            'run_scope' => 'admin',
+        ]);
+        $this->repository->create([
+            'name' => 'everywhere',
+            'code' => '$GLOBALS["code_snippets_exec_log"][] = "global";',
+            'active' => true,
+            'run_scope' => 'global',
+        ]);
+
+        $this->executor->run(
+            null,
+            new \CodeSnippetsTest\Support\FakeMvcEvent(false),
+            [],
+            'global_admin',
+            'fpm-fcgi'
+        );
+        $this->assertSame(['global'], $GLOBALS['code_snippets_exec_log']);
+    }
+
+    public function testFrontEndScopeDoesNotRunInAdmin(): void
+    {
+        $this->repository->create([
+            'name' => 'front-only',
+            'code' => '$GLOBALS["code_snippets_exec_log"][] = "front";',
+            'active' => true,
+            'run_scope' => 'front-end',
+        ]);
+        $this->repository->create([
+            'name' => 'everywhere',
+            'code' => '$GLOBALS["code_snippets_exec_log"][] = "global";',
+            'active' => true,
+            'run_scope' => 'global',
+        ]);
+
+        $this->executor->run(
+            null,
+            new \CodeSnippetsTest\Support\FakeMvcEvent(true),
+            [],
+            'global_admin',
+            'fpm-fcgi'
+        );
+        $this->assertSame(['global'], $GLOBALS['code_snippets_exec_log']);
+    }
+
+    public function testMatchingScopeRuns(): void
+    {
+        $this->repository->create([
+            'name' => 'front-only',
+            'code' => '$GLOBALS["code_snippets_exec_log"][] = "front";',
+            'active' => true,
+            'run_scope' => 'front-end',
+        ]);
+
+        $this->executor->run(
+            null,
+            new \CodeSnippetsTest\Support\FakeMvcEvent(false),
+            [],
+            'global_admin',
+            'fpm-fcgi'
+        );
+        $this->assertSame(['front'], $GLOBALS['code_snippets_exec_log']);
+    }
+
     public function testExecuteFromMvcEventReadsApplication(): void
     {
         $this->repository->create([

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CodeSnippets\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-18 13:05+0100\n"
+"POT-Creation-Date: 2026-09-18 13:51+0100\n"
 "PO-Revision-Date: 2026-09-18 13:05+0100\n"
 "Last-Translator: Área de Tecnología Educativa\n"
 "Language-Team: Spanish\n"
@@ -17,7 +17,7 @@ msgstr "Eliminar fragmento"
 
 #: view/code-snippets/admin/snippet/delete.phtml:20
 #: view/code-snippets/admin/snippet/index.phtml:25
-#: view/code-snippets/admin/snippet/form.phtml:17
+#: view/code-snippets/admin/snippet/form.phtml:25
 msgid "Safe mode is active. PHP snippets are not being executed."
 msgstr "El modo seguro está activo. No se están ejecutando fragmentos PHP."
 
@@ -31,17 +31,17 @@ msgstr ""
 "puede deshacer."
 
 #: view/code-snippets/admin/snippet/delete.phtml:35
-#: view/code-snippets/admin/snippet/index.phtml:110
-#: view/code-snippets/admin/snippet/form.phtml:81
+#: view/code-snippets/admin/snippet/index.phtml:116
+#: view/code-snippets/admin/snippet/form.phtml:89
 msgid "Delete"
 msgstr "Eliminar"
 
 #: view/code-snippets/admin/snippet/delete.phtml:37
-#: view/code-snippets/admin/snippet/form.phtml:64
+#: view/code-snippets/admin/snippet/form.phtml:72
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: view/code-snippets/admin/snippet/add.phtml:14
+#: view/code-snippets/admin/snippet/add.phtml:13
 msgid "Add snippet"
 msgstr "Añadir fragmento"
 
@@ -51,7 +51,9 @@ msgstr "Fragmentos de código"
 
 #: view/code-snippets/admin/snippet/index.phtml:21
 msgid "Emergency safe mode is active. PHP snippets are not being executed."
-msgstr "El modo seguro de emergencia está activo. No se están ejecutando fragmentos PHP."
+msgstr ""
+"El modo seguro de emergencia está activo. No se están ejecutando fragmentos "
+"PHP."
 
 #: view/code-snippets/admin/snippet/index.phtml:31
 msgid "Add new snippet"
@@ -66,54 +68,58 @@ msgid "Name"
 msgstr "Nombre"
 
 #: view/code-snippets/admin/snippet/index.phtml:44
-#: view/code-snippets/admin/snippet/form.phtml:29
+#: view/code-snippets/admin/snippet/form.phtml:37
 msgid "Status"
 msgstr "Estado"
 
 #: view/code-snippets/admin/snippet/index.phtml:45
+msgid "Run snippet"
+msgstr "Ejecutar fragmento"
+
+#: view/code-snippets/admin/snippet/index.phtml:46
 msgid "Priority"
 msgstr "Prioridad"
 
-#: view/code-snippets/admin/snippet/index.phtml:46
+#: view/code-snippets/admin/snippet/index.phtml:47
 msgid "Modified"
 msgstr "Modificado"
 
-#: view/code-snippets/admin/snippet/index.phtml:47
+#: view/code-snippets/admin/snippet/index.phtml:48
 msgid "Last error"
 msgstr "Último error"
 
-#: view/code-snippets/admin/snippet/index.phtml:48
+#: view/code-snippets/admin/snippet/index.phtml:49
 msgid "Actions"
 msgstr "Acciones"
 
-#: view/code-snippets/admin/snippet/index.phtml:64
-#: view/code-snippets/admin/snippet/form.phtml:31
+#: view/code-snippets/admin/snippet/index.phtml:65
+#: view/code-snippets/admin/snippet/form.phtml:39
 msgid "Active"
 msgstr "Activo"
 
-#: view/code-snippets/admin/snippet/index.phtml:66
-#: view/code-snippets/admin/snippet/form.phtml:33
+#: view/code-snippets/admin/snippet/index.phtml:67
+#: view/code-snippets/admin/snippet/form.phtml:41
 msgid "Inactive"
 msgstr "Inactivo"
 
-#: view/code-snippets/admin/snippet/index.phtml:69
+#: view/code-snippets/admin/snippet/index.phtml:70
 msgid "Error"
 msgstr "Error"
 
-#: view/code-snippets/admin/snippet/index.phtml:88
+#: view/code-snippets/admin/snippet/index.phtml:94
 msgid "None"
 msgstr "Ninguno"
 
-#: view/code-snippets/admin/snippet/index.phtml:95
+#: view/code-snippets/admin/snippet/index.phtml:101
 msgid "Edit"
 msgstr "Editar"
 
-#: view/code-snippets/admin/snippet/index.phtml:101
-#: view/code-snippets/admin/snippet/form.phtml:76
+#: view/code-snippets/admin/snippet/index.phtml:107
+#: view/code-snippets/admin/snippet/form.phtml:84
 msgid "Deactivate"
 msgstr "Desactivar"
 
-#: view/code-snippets/admin/snippet/index.phtml:106
+#: view/code-snippets/admin/snippet/index.phtml:112
 msgid "Activate"
 msgstr "Activar"
 
@@ -122,111 +128,147 @@ msgstr "Activar"
 msgid "Edit snippet #%s"
 msgstr "Editar fragmento #%s"
 
-#: view/code-snippets/admin/snippet/form.phtml:23
+#: view/code-snippets/admin/snippet/form.phtml:31
 msgid ""
 "PHP snippets execute with the privileges of the Omeka S PHP process. Only "
 "trusted global administrators should be allowed to manage snippets."
 msgstr ""
-"Los fragmentos PHP se ejecutan con los privilegios del proceso PHP de Omeka S. "
-"Solo administradores globales de confianza deberían poder gestionar fragmentos."
+"Los fragmentos PHP se ejecutan con los privilegios del proceso PHP de Omeka "
+"S. Solo administradores globales de confianza deberían poder gestionar "
+"fragmentos."
 
-#: view/code-snippets/admin/snippet/form.phtml:38
+#: view/code-snippets/admin/snippet/form.phtml:46
 msgid "Last runtime error"
 msgstr "Último error de ejecución"
 
-#: view/code-snippets/admin/snippet/form.phtml:40
+#: view/code-snippets/admin/snippet/form.phtml:48
 msgid "Error type"
 msgstr "Tipo de error"
 
-#: view/code-snippets/admin/snippet/form.phtml:42
+#: view/code-snippets/admin/snippet/form.phtml:50
 msgid "Message"
 msgstr "Mensaje"
 
-#: view/code-snippets/admin/snippet/form.phtml:45
+#: view/code-snippets/admin/snippet/form.phtml:53
 msgid "Line"
 msgstr "Línea"
 
-#: view/code-snippets/admin/snippet/form.phtml:48
+#: view/code-snippets/admin/snippet/form.phtml:56
 msgid "Date/time"
 msgstr "Fecha/hora"
 
-#: view/code-snippets/admin/snippet/form.phtml:61
+#: view/code-snippets/admin/snippet/form.phtml:69
 msgid "Save"
 msgstr "Guardar"
 
-#: view/code-snippets/admin/snippet/form.phtml:62
+#: view/code-snippets/admin/snippet/form.phtml:70
 msgid "Save and activate"
 msgstr "Guardar y activar"
 
-#: view/code-snippets/admin/snippet/form.phtml:79
+#: view/code-snippets/admin/snippet/form.phtml:87
 msgid "Are you sure you want to delete this snippet?"
 msgstr "¿Seguro que desea eliminar este fragmento?"
 
-#: src/Controller/Admin/SnippetController.php:249
+#: src/Controller/Admin/SnippetController.php:252
 msgid "You are not allowed to manage code snippets."
 msgstr "No tiene permiso para gestionar fragmentos de código."
 
-#: src/Controller/Admin/SnippetController.php:287
+#: src/Controller/Admin/SnippetController.php:290
 msgid "Method not allowed."
 msgstr "Método no permitido."
 
-#: src/Form/SnippetForm.php:23
+#: src/Form/SnippetForm.php:24
 msgid "Display name of the snippet. Names do not need to be unique."
 msgstr "Nombre visible del fragmento. Los nombres no tienen que ser únicos."
 
-#: src/Form/SnippetForm.php:35
+#: src/Form/SnippetForm.php:36
 msgid "Description"
 msgstr "Descripción"
 
-#: src/Form/SnippetForm.php:36
+#: src/Form/SnippetForm.php:37
 msgid "Optional description of what this snippet does."
 msgstr "Descripción opcional de lo que hace este fragmento."
 
-#: src/Form/SnippetForm.php:48
+#: src/Form/SnippetForm.php:49
 msgid "PHP code"
 msgstr "Código PHP"
 
-#: src/Form/SnippetForm.php:49
-msgid "PHP run on each HTTP request when active. Opening <?php is optional."
-msgstr "PHP que se ejecuta en cada petición HTTP cuando está activo. La etiqueta de apertura <?php es opcional."
+#: src/Form/SnippetForm.php:50
+msgid ""
+"PHP run on matching HTTP requests when active. Opening <?php is optional."
+msgstr ""
+"PHP que se ejecuta en las peticiones HTTP coincidentes cuando está activo. "
+"La etiqueta de apertura <?php es opcional."
 
-#: src/Form/SnippetForm.php:67
+#: src/Form/SnippetForm.php:68
 msgid "Lower numbers execute first. Default is 10."
-msgstr "Los números más bajos se ejecutan primero. El valor predeterminado es 10."
+msgstr ""
+"Los números más bajos se ejecutan primero. El valor predeterminado es 10."
 
-#: src/Form/SnippetForm.php:81
+#: src/Form/SnippetForm.php:82
+msgid ""
+"Choose whether this snippet runs on the public site, in the admin, or both."
+msgstr ""
+"Elija si este fragmento se ejecuta en el sitio público, en el administrador "
+"o en ambos."
+
+#: src/Form/SnippetForm.php:96
 msgid "Execute this snippet on HTTP requests."
 msgstr "Ejecutar este fragmento en las peticiones HTTP."
 
-#: src/Controller/Admin/SnippetController.php:68
+#: src/Controller/Admin/SnippetController.php:69
 msgid "Snippet created."
 msgstr "Fragmento creado."
 
-#: src/Controller/Admin/SnippetController.php:118
+#: src/Controller/Admin/SnippetController.php:120
 msgid "Snippet updated."
 msgstr "Fragmento actualizado."
 
-#: src/Controller/Admin/SnippetController.php:155
+#: src/Controller/Admin/SnippetController.php:157
 msgid "Snippet activated."
 msgstr "Fragmento activado."
 
-#: src/Controller/Admin/SnippetController.php:182
+#: src/Controller/Admin/SnippetController.php:184
 msgid "Snippet deactivated."
 msgstr "Fragmento desactivado."
 
-#: src/Controller/Admin/SnippetController.php:207
+#: src/Controller/Admin/SnippetController.php:209
 msgid "Snippet deleted."
 msgstr "Fragmento eliminado."
 
-#: src/Controller/Admin/SnippetController.php:278
+#: src/Controller/Admin/SnippetController.php:281
 msgid "The requested snippet was not found."
 msgstr "No se ha encontrado el fragmento solicitado."
 
-#: src/Controller/Admin/SnippetController.php:293
+#: src/Controller/Admin/SnippetController.php:296
 msgid "Invalid CSRF token."
 msgstr "Token CSRF no válido."
 
-#: src/Controller/Admin/SnippetController.php:302
+#: src/Controller/Admin/SnippetController.php:305
 #, php-format
 msgid "The snippet contains invalid PHP syntax: %s"
 msgstr "El fragmento contiene sintaxis PHP no válida: %s"
+
+#: src/Service/SnippetScope.php:39
+msgid "Run snippet everywhere"
+msgstr "Ejecutar el fragmento en todas partes"
+
+#: src/Service/SnippetScope.php:40
+msgid "Only run in administration area"
+msgstr "Ejecutar solo en el área de administración"
+
+#: src/Service/SnippetScope.php:41
+msgid "Only run on site front-end"
+msgstr "Ejecutar solo en la parte pública del sitio"
+
+#: src/Service/SnippetScope.php:51
+msgid "Everywhere"
+msgstr "En todas partes"
+
+#: src/Service/SnippetScope.php:52
+msgid "Administration area"
+msgstr "Área de administración"
+
+#: src/Service/SnippetScope.php:53
+msgid "Site front-end"
+msgstr "Parte pública del sitio"

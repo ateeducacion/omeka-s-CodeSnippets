@@ -6,9 +6,11 @@ namespace CodeSnippetsTest\Form;
 
 use CodeSnippets\Form\SnippetForm;
 use CodeSnippets\Service\SnippetRepository;
+use CodeSnippets\Service\SnippetScope;
 use Laminas\Form\Element\Checkbox;
 use Laminas\Form\Element\Csrf;
 use Laminas\Form\Element\Number;
+use Laminas\Form\Element\Select;
 use Laminas\Form\Element\Text;
 use Laminas\Form\Element\Textarea;
 use PHPUnit\Framework\TestCase;
@@ -24,6 +26,8 @@ class SnippetFormTest extends TestCase
         $this->assertInstanceOf(Textarea::class, $form->get('description'));
         $this->assertInstanceOf(Textarea::class, $form->get('code'));
         $this->assertInstanceOf(Number::class, $form->get('priority'));
+        $this->assertInstanceOf(Select::class, $form->get('run_scope'));
+        $this->assertSame(SnippetScope::DEFAULT, $form->get('run_scope')->getValue());
         $this->assertInstanceOf(Checkbox::class, $form->get('active'));
         $this->assertInstanceOf(Csrf::class, $form->get('csrf'));
         $this->assertSame(

@@ -42,6 +42,7 @@ $this->htmlElement('body')->appendAttribute('class', 'code-snippets browse');
         <tr>
             <th><?php echo $escape($translate('Name')); ?></th>
             <th><?php echo $escape($translate('Status')); ?></th>
+            <th><?php echo $escape($translate('Run snippet')); ?></th>
             <th><?php echo $escape($translate('Priority')); ?></th>
             <th><?php echo $escape($translate('Modified')); ?></th>
             <th><?php echo $escape($translate('Last error')); ?></th>
@@ -69,6 +70,11 @@ $this->htmlElement('body')->appendAttribute('class', 'code-snippets browse');
                     <span class="code-snippets-status is-error"><?php echo $escape($translate('Error')); ?></span>
                 <?php endif; ?>
             </td>
+            <td><?php
+                $scopeLabels = \CodeSnippets\Service\SnippetScope::shortLabels();
+                $scope = \CodeSnippets\Service\SnippetScope::normalize($snippet['run_scope'] ?? null);
+                echo $escape($translate($scopeLabels[$scope]));
+            ?></td>
             <td><?php echo $escape((string) $snippet['priority']); ?></td>
             <td><?php echo $escape((string) $snippet['modified']); ?></td>
             <td>

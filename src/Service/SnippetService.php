@@ -141,6 +141,9 @@ class SnippetService
             }
             $data['priority'] = (int) $data['priority'];
         }
+        if (array_key_exists('run_scope', $data)) {
+            $data['run_scope'] = SnippetScope::normalize($data['run_scope']);
+        }
         return $data;
     }
 

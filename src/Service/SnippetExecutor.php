@@ -107,7 +107,7 @@ class SnippetExecutor
             return 0;
         }
 
-        $snippets = $this->repository->findActiveOrdered();
+        $snippets = $this->repository->findActiveOrdered(SnippetScope::fromMvcEvent($event));
         $invoked = 0;
         foreach ($snippets as $snippet) {
             $id = (int) $snippet['id'];

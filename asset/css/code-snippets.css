@@ -1,10 +1,39 @@
-.code-snippets-code {
+.code-snippets-code,
+.code-snippets-editor {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-size: 13px;
     line-height: 1.45;
     width: 100%;
     tab-size: 4;
 }
+
+.codejar-wrap {
+    width: 100%;
+}
+
+.code-snippets-editor {
+    min-height: 22rem;
+    max-height: 40rem;
+    overflow: auto;
+    box-sizing: border-box;
+    padding: 0.75rem;
+    border: 1px solid #c8c8c8;
+    background: #fafafa;
+    white-space: pre;
+    word-wrap: normal;
+    overflow-wrap: normal;
+}
+
+.code-snippets-editor:focus {
+    outline: 2px solid #3c8dbc;
+    outline-offset: -1px;
+}
+
+.code-snippets-editor .cs-keyword { color: #0451a5; font-weight: 600; }
+.code-snippets-editor .cs-string { color: #a31515; }
+.code-snippets-editor .cs-comment { color: #008000; font-style: italic; }
+.code-snippets-editor .cs-variable { color: #001080; }
+.code-snippets-editor .cs-number { color: #098658; }
 
 .code-snippets-status {
     display: inline-block;

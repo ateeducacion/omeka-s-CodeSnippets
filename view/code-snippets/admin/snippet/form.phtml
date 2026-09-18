@@ -10,6 +10,12 @@
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 $escapeAttr = $this->plugin('escapeHtmlAttr');
+
+$this->headLink()->appendStylesheet($this->assetUrl('css/code-snippets.css', 'CodeSnippets'));
+$this->headLink()->appendStylesheet($this->assetUrl('vendor/codejar-linenumbers/codejar-linenumbers.css', 'CodeSnippets'));
+$this->headScript()->appendFile($this->assetUrl('vendor/codejar/codejar.js', 'CodeSnippets'), 'text/javascript', ['defer' => true]);
+$this->headScript()->appendFile($this->assetUrl('vendor/codejar-linenumbers/codejar-linenumbers.js', 'CodeSnippets'), 'text/javascript', ['defer' => true]);
+$this->headScript()->appendFile($this->assetUrl('js/code-snippets-editor.js', 'CodeSnippets'), 'text/javascript', ['defer' => true]);
 ?>
 
 <?php if (!empty($safeModeActive)): ?>
