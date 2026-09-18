@@ -1,8 +1,24 @@
 (function () {
+    function boot() {
+        initEditor();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        boot();
+    }
+
+    function initEditor() {
+    if (window.__codeSnippetsEditorInit) {
+        return;
+    }
     var textarea = document.getElementById('code-snippets-code');
     if (!textarea || typeof CodeJar !== 'function') {
         return;
     }
+    window.__codeSnippetsEditorInit = true;
+
 
     var KEYWORDS = {
         abstract: 1, and: 1, array: 1, as: 1, break: 1, callable: 1, case: 1,
@@ -145,4 +161,5 @@
     jar.onUpdate(function (code) {
         textarea.value = code;
     });
+    }
 })();
