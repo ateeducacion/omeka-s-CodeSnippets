@@ -2,5 +2,7 @@
 .aider*
 .DS_Store
 .phpunit.result.cache
+coverage.xml
+/coverage/
 themes/
 vendor/

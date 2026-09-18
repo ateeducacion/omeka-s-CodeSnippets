@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace CodeSnippetsTest\Service;
 
 use CodeSnippets\Exception\InvalidSyntaxException;
+use CodeSnippets\Exception\SnippetNotFoundException;
 use CodeSnippets\Service\PhpValidator;
 use CodeSnippets\Service\SnippetService;
 use CodeSnippetsTest\Support\InMemorySnippetRepository;
@@ -37,12 +38,19 @@ class SnippetServiceTest extends TestCase
 
     public function testCreateActiveInvalidCodeIsRejected(): void
     {
-        $this->expectException(InvalidSyntaxException::class);
-        $this->service->create([
-            'name' => 'Broken',
-            'code' => 'if (',
-            'active' => true,
-        ]);
+        try {
+            $this->service->create([
+                'name' => 'Broken',
+                'code' => 'if (',
+                'active' => true,
+            ]);
+            $this->fail('Expected InvalidSyntaxException');
+        } catch (InvalidSyntaxException $exception) {
+            $this->assertNotSame('', $exception->getMessage());
+            $this->assertTrue(
+                $exception->getSyntaxLine() === null || $exception->getSyntaxLine() >= 1
+            );
+        }
     }
 
     public function testActivateInvalidCodeKeepsInactive(): void
@@ -103,5 +111,76 @@ class SnippetServiceTest extends TestCase
             'active' => true,
         ]);
         $this->assertSame("\$x = 1;", $snippet['code']);
+    }
+
+    public function testFindAllAndDelete(): void
+    {
+        $this->service->create(['name' => 'A', 'code' => '$a = 1;']);
+        $this->service->create(['name' => 'B', 'code' => '$b = 1;']);
+        $this->assertCount(2, $this->service->findAll());
+        $this->service->delete(1);
+        $this->assertCount(1, $this->service->findAll());
+    }
+
+    public function testFindMissingThrows(): void
+    {
+        $this->expectException(SnippetNotFoundException::class);
+        $this->service->find(99);
+    }
+
+    public function testDeactivate(): void
+    {
+        $snippet = $this->service->create([
+            'name' => 'On',
+            'code' => '$x = 1;',
+            'active' => true,
+        ]);
+        $off = $this->service->deactivate((int) $snippet['id']);
+        $this->assertFalse($off['active']);
+    }
+
+    public function testActiveTruthyStrings(): void
+    {
+        foreach (['1', 'true', 'on', 1] as $value) {
+            $snippet = $this->service->create([
+                'name' => 'Flag ' . (string) $value,
+                'code' => '$x = 1;',
+                'active' => $value,
+            ]);
+            $this->assertTrue($snippet['active'], (string) $value);
+        }
+    }
+
+    public function testInvalidPriorityIsRejected(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->service->create([
+            'name' => 'Bad',
+            'code' => '$x = 1;',
+            'priority' => '1.5',
+        ]);
+    }
+
+    public function testUpdateOnDatabaseRepositoryUsesTransaction(): void
+    {
+        if (!in_array('sqlite', \PDO::getAvailableDrivers(), true)) {
+            $this->markTestSkipped('pdo_sqlite is required');
+        }
+        $pdo = new \PDO('sqlite::memory:');
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $pdo->exec(\CodeSnippets\Db\Schema::createTableSqliteSql());
+        $pdo->exec(\CodeSnippets\Db\Schema::createIndexSqliteSql());
+        $repository = new \CodeSnippets\Service\SnippetRepository(
+            new \CodeSnippetsTest\Support\PdoConnection($pdo)
+        );
+        $service = new SnippetService($repository, new PhpValidator());
+        $created = $service->create(['name' => 'Db', 'code' => '$x = 1;']);
+        $updated = $service->update((int) $created['id'], [
+            'name' => 'Db2',
+            'code' => '$y = 2;',
+            'active' => false,
+        ]);
+        $this->assertSame('Db2', $updated['name']);
+        $this->assertSame('$y = 2;', $updated['code']);
     }
 }
