@@ -138,4 +138,17 @@ class ConfigFormTest extends TestCase
 
         $this->assertFalse($settings->stored[SnippetAdapter::WRITE_SETTING]);
     }
+
+    /**
+     * Omeka only renders the Configure link for a module whose module.ini
+     * declares it configurable, so getConfigForm() would be unreachable from
+     * the modules list without this flag.
+     */
+    public function testModuleIniDeclaresTheModuleConfigurable(): void
+    {
+        $ini = parse_ini_file(dirname(__DIR__, 3) . '/config/module.ini', true);
+
+        $this->assertArrayHasKey('info', $ini);
+        $this->assertTrue((bool) $ini['info']['configurable']);
+    }
 }
