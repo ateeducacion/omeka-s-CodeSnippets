@@ -10,6 +10,14 @@
 $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 $escapeAttr = $this->plugin('escapeHtmlAttr');
+
+$this->headLink()->appendStylesheet($this->assetUrl('vendor/prism/prism.min.css', 'CodeSnippets'));
+$this->headScript()->appendScript('window.Prism=window.Prism||{};window.Prism.manual=true;');
+$this->headScript()->appendFile($this->assetUrl('vendor/prism/prism.min.js', 'CodeSnippets'));
+$this->headScript()->appendFile($this->assetUrl('vendor/prism/prism-markup-templating.min.js', 'CodeSnippets'));
+$this->headScript()->appendFile($this->assetUrl('vendor/prism/prism-php.min.js', 'CodeSnippets'));
+$this->headScript()->appendFile($this->assetUrl('vendor/codejar/codejar.js', 'CodeSnippets'));
+$this->headScript()->appendFile($this->assetUrl('js/code-snippets-editor.js', 'CodeSnippets'));
 ?>
 
 <?php if (!empty($safeModeActive)): ?>

@@ -6,7 +6,6 @@
  * @var array<string, string> $safeModeQuery
  */
 $translate = $this->plugin('translate');
-$escape = $this->plugin('escapeHtml');
 
 $this->headLink()->appendStylesheet($this->assetUrl('css/code-snippets.css', 'CodeSnippets'));
 $this->htmlElement('body')->appendAttribute('class', 'code-snippets add');

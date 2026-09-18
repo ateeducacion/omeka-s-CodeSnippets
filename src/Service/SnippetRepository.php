@@ -52,12 +52,19 @@ class SnippetRepository implements SnippetRepositoryInterface
         return $snippets;
     }
 
-    public function findActiveOrdered(): array
+    public function findActiveOrdered(?string $requestScope = null): array
     {
-        $rows = $this->connection->fetchAllAssociative(
-            Schema::selectActiveOrderedSql(),
-            [1]
-        );
+        if ($requestScope === null) {
+            $rows = $this->connection->fetchAllAssociative(
+                Schema::selectActiveOrderedSql(),
+                [1]
+            );
+        } else {
+            $rows = $this->connection->fetchAllAssociative(
+                Schema::selectActiveOrderedForScopeSql(),
+                [1, SnippetScope::GLOBAL, SnippetScope::normalize($requestScope)]
+            );
+        }
         $snippets = [];
         foreach ($rows as $row) {
             $snippets[] = $this->hydrate($row);
@@ -74,6 +81,7 @@ class SnippetRepository implements SnippetRepositoryInterface
             'code' => (string) ($data['code'] ?? ''),
             'priority' => $this->normalizePriority($data['priority'] ?? self::DEFAULT_PRIORITY),
             'active' => !empty($data['active']) ? 1 : 0,
+            'run_scope' => SnippetScope::normalize($data['run_scope'] ?? SnippetScope::DEFAULT),
             'created' => $now,
             'modified' => $now,
             'last_error_type' => null,
@@ -109,6 +117,9 @@ class SnippetRepository implements SnippetRepositoryInterface
         }
         if (array_key_exists('active', $data)) {
             $fields['active'] = $data['active'] ? 1 : 0;
+        }
+        if (array_key_exists('run_scope', $data)) {
+            $fields['run_scope'] = SnippetScope::normalize($data['run_scope']);
         }
 
         $this->connection->update(Schema::TABLE, $fields, ['id' => $id]);
@@ -198,6 +209,7 @@ class SnippetRepository implements SnippetRepositoryInterface
             'code' => (string) ($row['code'] ?? ''),
             'priority' => (int) ($row['priority'] ?? self::DEFAULT_PRIORITY),
             'active' => (bool) ($row['active'] ?? true),
+            'run_scope' => SnippetScope::normalize($row['run_scope'] ?? SnippetScope::DEFAULT),
             'created' => (string) ($row['created'] ?? ''),
             'modified' => (string) ($row['modified'] ?? ''),
             'last_error_type' => $errorType !== null ? (string) $errorType : null,

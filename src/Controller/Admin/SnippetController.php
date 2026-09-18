@@ -9,6 +9,7 @@ use CodeSnippets\Exception\SnippetNotFoundException;
 use CodeSnippets\Form\SnippetForm;
 use CodeSnippets\Service\ActionCsrf;
 use CodeSnippets\Service\SafeMode;
+use CodeSnippets\Service\SnippetScope;
 use CodeSnippets\Service\SnippetService;
 use Laminas\Mvc\Controller\AbstractActionController;
 use Laminas\View\Model\ViewModel;
@@ -103,6 +104,7 @@ class SnippetController extends AbstractActionController
             'description' => $snippet['description'],
             'code' => $snippet['code'],
             'priority' => $snippet['priority'],
+            'run_scope' => $snippet['run_scope'] ?? SnippetScope::DEFAULT,
             'active' => $snippet['active'] ? '1' : '0',
         ]);
 
@@ -238,6 +240,7 @@ class SnippetController extends AbstractActionController
             'description' => $data['description'] ?? null,
             'code' => $data['code'] ?? '',
             'priority' => $data['priority'] ?? 10,
+            'run_scope' => $data['run_scope'] ?? SnippetScope::DEFAULT,
             'active' => !empty($data['active']),
         ];
     }

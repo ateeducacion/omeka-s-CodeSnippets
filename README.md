@@ -38,11 +38,12 @@ Open **Admin → Code Snippets** (`/admin/code-snippets`).
 - **Edit:** Change any field, then Save. Save and activate stores the snippet and sets it active after syntax validation.
 - **Activate / Deactivate:** Use the list or edit screen. State changes are POST requests with CSRF protection.
 - **Priority:** Integer. Lower numbers run first. Default is `10`.
+- **Run snippet:** Everywhere, administration area only, or site front-end only (same three PHP scopes as the WordPress Code Snippets plugin).
 - **Delete:** Opens a confirmation page. POST + CSRF required. Only the selected snippet is removed.
 
 Snippet names do not need to be unique. The identifier is the numeric ID.
 
-The code field is a `<textarea>`. A rich editor is not required. Do not wrap snippet code in the `CodeSnippets` namespace.
+The code field is a `<textarea>`. When JavaScript is available, [CodeJar](https://github.com/antonmedv/codejar) plus Prism highlight PHP in place. Omeka’s CKEditor is for HTML, not PHP, so it is not used. The form still works if the editor assets fail to load. Do not wrap snippet code in the `CodeSnippets` namespace.
 
 ## Priority
 
@@ -51,9 +52,21 @@ The code field is a `<textarea>`. A rich editor is not required. Do not wrap sni
 - Negative priorities are allowed.
 - When two snippets share a priority, the lower snippet ID runs first (`ORDER BY priority ASC, id ASC`).
 
+## Run location
+
+Each snippet has a run location, stored as `run_scope`:
+
+| Value | UI label | When it runs |
+| --- | --- | --- |
+| `global` | Run snippet everywhere | Every HTTP request (default) |
+| `admin` | Only run in administration area | Routes with Omeka’s `__ADMIN__` flag |
+| `front-end` | Only run on site front-end | All other HTTP requests (public site, login, API) |
+
+This matches WordPress Code Snippets: `is_admin()` vs not. CLI and both safe modes still skip every snippet.
+
 ## Execution context
 
-Active snippets run at most once per HTTP request.
+Active snippets that match the current run location run at most once per HTTP request.
 
 **Event:** `Laminas\Mvc\MvcEvent::EVENT_ROUTE` (`route`) at priority `-10`.
 

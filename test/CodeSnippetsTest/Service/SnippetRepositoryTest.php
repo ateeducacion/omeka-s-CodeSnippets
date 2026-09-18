@@ -120,5 +120,42 @@ class SnippetRepositoryTest extends TestCase
         $this->assertStringContainsString('idx_code_snippet_active_priority_id', $sql);
         $this->assertStringContainsString('(`active`, `priority`, `id`)', $sql);
         $this->assertStringContainsString('DEFAULT 10', $sql);
+        $this->assertStringContainsString('run_scope', $sql);
+    }
+
+    public function testRunScopeDefaultsToGlobalAndFiltersActiveQuery(): void
+    {
+        $this->repository->create([
+            'name' => 'Everywhere',
+            'code' => '$x = 1;',
+            'active' => true,
+        ]);
+        $this->repository->create([
+            'name' => 'Admin only',
+            'code' => '$x = 2;',
+            'active' => true,
+            'run_scope' => 'admin',
+        ]);
+        $this->repository->create([
+            'name' => 'Front only',
+            'code' => '$x = 3;',
+            'active' => true,
+            'run_scope' => 'front-end',
+        ]);
+
+        $this->assertSame('global', $this->repository->find(1)['run_scope']);
+        $front = $this->repository->findActiveOrdered('front-end');
+        $names = [];
+        foreach ($front as $row) {
+            $names[] = $row['name'];
+        }
+        $this->assertSame(['Everywhere', 'Front only'], $names);
+
+        $admin = $this->repository->findActiveOrdered('admin');
+        $adminNames = [];
+        foreach ($admin as $row) {
+            $adminNames[] = $row['name'];
+        }
+        $this->assertSame(['Everywhere', 'Admin only'], $adminNames);
     }
 }

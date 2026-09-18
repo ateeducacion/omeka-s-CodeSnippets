@@ -19,9 +19,12 @@ interface SnippetRepositoryInterface
     /**
      * Active snippets ordered by priority ASC, id ASC.
      *
+     * When $requestScope is set, only `global` snippets and snippets whose
+     * run_scope matches that request are returned.
+     *
      * @return array<int, array<string, mixed>>
      */
-    public function findActiveOrdered(): array;
+    public function findActiveOrdered(?string $requestScope = null): array;
 
     /**
      * @param array<string, mixed> $data

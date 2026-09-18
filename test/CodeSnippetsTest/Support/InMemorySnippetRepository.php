@@ -7,6 +7,7 @@ namespace CodeSnippetsTest\Support;
 use CodeSnippets\Exception\SnippetNotFoundException;
 use CodeSnippets\Service\SnippetRepository;
 use CodeSnippets\Service\SnippetRepositoryInterface;
+use CodeSnippets\Service\SnippetScope;
 
 class InMemorySnippetRepository implements SnippetRepositoryInterface
 {
@@ -36,14 +37,19 @@ class InMemorySnippetRepository implements SnippetRepositoryInterface
         return $rows;
     }
 
-    public function findActiveOrdered(): array
+    public function findActiveOrdered(?string $requestScope = null): array
     {
         $this->findActiveCalls++;
         $rows = [];
         foreach ($this->snippets as $snippet) {
-            if ($snippet['active']) {
-                $rows[] = $snippet;
+            if (!$snippet['active']) {
+                continue;
             }
+            $scope = $snippet['run_scope'] ?? SnippetScope::DEFAULT;
+            if ($requestScope !== null && !SnippetScope::matches($scope, $requestScope)) {
+                continue;
+            }
+            $rows[] = $snippet;
         }
         usort($rows, static function (array $a, array $b) {
             if ($a['priority'] === $b['priority']) {
@@ -65,6 +71,7 @@ class InMemorySnippetRepository implements SnippetRepositoryInterface
             'code' => (string) $data['code'],
             'priority' => isset($data['priority']) ? (int) $data['priority'] : SnippetRepository::DEFAULT_PRIORITY,
             'active' => !empty($data['active']),
+            'run_scope' => SnippetScope::normalize($data['run_scope'] ?? SnippetScope::DEFAULT),
             'created' => $now,
             'modified' => $now,
             'last_error_type' => null,
@@ -79,11 +86,14 @@ class InMemorySnippetRepository implements SnippetRepositoryInterface
     public function update(int $id, array $data): array
     {
         $existing = $this->require($id);
-        foreach (['name', 'description', 'code', 'priority', 'active'] as $field) {
+        foreach (['name', 'description', 'code', 'priority', 'active', 'run_scope'] as $field) {
             if (array_key_exists($field, $data)) {
                 $existing[$field] = $field === 'priority' ? (int) $data[$field] : $data[$field];
                 if ($field === 'active') {
                     $existing[$field] = (bool) $data[$field];
+                }
+                if ($field === 'run_scope') {
+                    $existing[$field] = SnippetScope::normalize($data[$field]);
                 }
             }
         }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace CodeSnippets\Form;
 
 use CodeSnippets\Service\SnippetRepository;
+use CodeSnippets\Service\SnippetScope;
 use Laminas\Form\Element;
 use Laminas\Form\Form;
 use Laminas\InputFilter\InputFilterProviderInterface;
@@ -46,7 +47,7 @@ class SnippetForm extends Form implements InputFilterProviderInterface
             'type' => Element\Textarea::class,
             'options' => [
                 'label' => 'PHP code', // @translate
-                'info' => 'PHP run on each HTTP request when active. Opening <?php is optional.', // @translate
+                'info' => 'PHP run on matching HTTP requests when active. Opening <?php is optional.', // @translate
             ],
             'attributes' => [
                 'id' => 'code-snippets-code',
@@ -72,6 +73,20 @@ class SnippetForm extends Form implements InputFilterProviderInterface
             ],
         ]);
         $this->get('priority')->setValue(SnippetRepository::DEFAULT_PRIORITY);
+
+        $this->add([
+            'name' => 'run_scope',
+            'type' => Element\Select::class,
+            'options' => [
+                'label' => 'Run snippet', // @translate
+                'info' => 'Choose whether this snippet runs on the public site, in the admin, or both.', // @translate
+                'value_options' => SnippetScope::labels(),
+            ],
+            'attributes' => [
+                'id' => 'code-snippets-run-scope',
+            ],
+        ]);
+        $this->get('run_scope')->setValue(SnippetScope::DEFAULT);
 
         $this->add([
             'name' => 'active',
@@ -128,6 +143,9 @@ class SnippetForm extends Form implements InputFilterProviderInterface
                 'filters' => [
                     ['name' => 'ToInt'],
                 ],
+            ],
+            'run_scope' => [
+                'required' => false,
             ],
             'active' => [
                 'required' => false,

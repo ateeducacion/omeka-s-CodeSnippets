@@ -98,8 +98,23 @@ class Module extends AbstractModule
 
     public function upgrade($oldVersion, $newVersion, ServiceLocatorInterface $serviceLocator): void
     {
-        // Future schema changes belong here, keyed on $oldVersion.
-        // Disabling the module must never drop the table; only uninstall() does.
+        $this->loadSchemaClass();
+        $connection = $serviceLocator->get('Omeka\Connection');
+        if (!$this->hasColumn($connection, 'run_scope')) {
+            $connection->exec(Schema::addRunScopeColumnSql());
+        }
+    }
+
+    /**
+     * @param object $connection Doctrine\DBAL\Connection
+     */
+    private function hasColumn($connection, string $column): bool
+    {
+        if (!method_exists($connection, 'getSchemaManager')) {
+            return false;
+        }
+        $columns = $connection->getSchemaManager()->listTableColumns(Schema::TABLE);
+        return isset($columns[$column]);
     }
 
     public function uninstall(ServiceLocatorInterface $serviceLocator): void

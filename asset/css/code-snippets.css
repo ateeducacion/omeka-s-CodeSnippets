@@ -1,9 +1,28 @@
-.code-snippets-code {
+.code-snippets-code,
+.code-snippets-editor {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     font-size: 13px;
     line-height: 1.45;
     width: 100%;
     tab-size: 4;
+}
+
+.code-snippets-editor {
+    min-height: 22rem;
+    max-height: 40rem;
+    overflow: auto;
+    box-sizing: border-box;
+    padding: 0.75rem;
+    border: 1px solid #c8c8c8;
+    background: #fafafa;
+    white-space: pre;
+    word-wrap: normal;
+    overflow-wrap: normal;
+}
+
+.code-snippets-editor:focus {
+    outline: 2px solid #3c8dbc;
+    outline-offset: -1px;
 }
 
 .code-snippets-status {
