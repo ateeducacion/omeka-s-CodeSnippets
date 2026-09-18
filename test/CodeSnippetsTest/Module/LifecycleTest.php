@@ -96,10 +96,17 @@ class LifecycleTest extends TestCase
         $connection = new class {
             /** @var array<int, string> */
             public $sql = [];
+            /** @var array<int, array<string, mixed>> */
+            public $inserted = [];
 
             public function exec($sql)
             {
                 $this->sql[] = (string) $sql;
+            }
+
+            public function insert($table, array $data)
+            {
+                $this->inserted[] = $data;
             }
         };
         $locator = $this->createMock(\Laminas\ServiceManager\ServiceLocatorInterface::class);
@@ -113,6 +120,7 @@ class LifecycleTest extends TestCase
         $this->assertCount(2, $connection->sql);
         $this->assertStringContainsString('CREATE TABLE', $connection->sql[0]);
         $this->assertStringContainsString('DROP TABLE', $connection->sql[1]);
+        $this->assertNotEmpty($connection->inserted, 'install seeds the example snippets');
     }
 
     public function testOnBootstrapRegistersAclAndExecutor(): void

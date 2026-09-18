@@ -217,7 +217,7 @@ class SnippetController extends AbstractActionController
 
         // Browse rows load the confirmation into the admin sidebar; the plain
         // URL still renders the full page for requests without JavaScript.
-        if ($this->params()->fromQuery('sidebar')) {
+        if ($this->getRequest()->getQuery('sidebar')) {
             $view->setTemplate('code-snippets/admin/snippet/delete-confirm');
             $view->setTerminal(true);
         }
