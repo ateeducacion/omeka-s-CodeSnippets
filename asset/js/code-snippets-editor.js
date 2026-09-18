@@ -133,9 +133,14 @@
     textarea.setAttribute('hidden', 'hidden');
     textarea.tabIndex = -1;
 
-    var jar = CodeJar(wrapEl, function (editor) {
+    var highlight = function (editor) {
         editor.innerHTML = highlightPhp(editor.textContent || '');
-    }, { tab: '    ' });
+    };
+    if (typeof CodeJar.withLineNumbers === 'function') {
+        highlight = CodeJar.withLineNumbers(highlight);
+    }
+
+    var jar = CodeJar(wrapEl, highlight, { tab: '    ' });
 
     jar.onUpdate(function (code) {
         textarea.value = code;

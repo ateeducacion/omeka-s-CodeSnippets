@@ -7,6 +7,10 @@
     tab-size: 4;
 }
 
+.codejar-wrap {
+    width: 100%;
+}
+
 .code-snippets-editor {
     min-height: 22rem;
     max-height: 40rem;

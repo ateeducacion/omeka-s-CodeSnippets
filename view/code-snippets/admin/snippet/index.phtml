@@ -11,12 +11,9 @@ $translate = $this->plugin('translate');
 $escape = $this->plugin('escapeHtml');
 $escapeAttr = $this->plugin('escapeHtmlAttr');
 
+$this->headLink()->appendStylesheet($this->assetUrl('css/code-snippets.css', 'CodeSnippets'));
 $this->htmlElement('body')->appendAttribute('class', 'code-snippets browse');
-$csCss = \CodeSnippets\View\EditorAssets::contents('asset/css/code-snippets.css');
 ?>
-<?php if ($csCss !== ''): ?>
-<style><?php echo $csCss; ?></style>
-<?php endif; ?>
 <?php echo $this->pageTitle($translate('Code Snippets')); ?>
 
 <?php if (!empty($emergencySafeMode)): ?>

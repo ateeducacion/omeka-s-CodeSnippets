@@ -43,7 +43,7 @@ Open **Admin → Code Snippets** (`/admin/code-snippets`).
 
 Snippet names do not need to be unique. The identifier is the numeric ID.
 
-The code field is a `<textarea>`. When JavaScript is available, [CodeJar](https://github.com/antonmedv/codejar) turns it into an editor and a small built-in tokenizer colors PHP. Omeka’s CKEditor is for HTML, not PHP, so it is not used. CodeJar does not highlight on its own; Prism is not required. The form still works if JavaScript fails. Do not wrap snippet code in the `CodeSnippets` namespace.
+The code field is a `<textarea>`. When JavaScript is available, [CodeJar](https://github.com/antonmedv/codejar) plus [codejar-linenumbers](https://github.com/julianpoemp/codejar-linenumbers) turn it into an editor with line numbers. A small built-in tokenizer colors PHP. Omeka’s CKEditor is for HTML, not PHP, so it is not used. Assets load the Omeka way: `$this->assetUrl('…', 'CodeSnippets')` into `headLink` / `headScript`, files under `asset/` and `asset/vendor/`. The form still works if JavaScript fails. Do not wrap snippet code in the `CodeSnippets` namespace.
 
 ## Priority
 
