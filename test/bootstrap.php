@@ -19,6 +19,20 @@ spl_autoload_register(static function (string $class): void {
         'Laminas\\Session\\Container' => __DIR__ . '/stubs/Laminas/Session/Container.php',
         'Laminas\\ServiceManager\\ServiceLocatorInterface' =>
             __DIR__ . '/stubs/Laminas/ServiceManager/ServiceLocatorInterface.php',
+        'Omeka\\Api\\ResourceInterface' => __DIR__ . '/stubs/Omeka/Api/ResourceInterface.php',
+        'Omeka\\Api\\Request' => __DIR__ . '/stubs/Omeka/Api/Request.php',
+        'Omeka\\Api\\Response' => __DIR__ . '/stubs/Omeka/Api/Response.php',
+        'Omeka\\Api\\Adapter\\AbstractAdapter' => __DIR__ . '/stubs/Omeka/Api/Adapter/AbstractAdapter.php',
+        'Omeka\\Api\\Representation\\AbstractResourceRepresentation' =>
+            __DIR__ . '/stubs/Omeka/Api/Representation/AbstractResourceRepresentation.php',
+        'Omeka\\Api\\Exception\\NotFoundException' =>
+            __DIR__ . '/stubs/Omeka/Api/Exception/NotFoundException.php',
+        'Omeka\\Api\\Exception\\PermissionDeniedException' =>
+            __DIR__ . '/stubs/Omeka/Api/Exception/PermissionDeniedException.php',
+        'Omeka\\Api\\Exception\\ValidationException' =>
+            __DIR__ . '/stubs/Omeka/Api/Exception/ValidationException.php',
+        'Omeka\\Api\\Exception\\BadRequestException' =>
+            __DIR__ . '/stubs/Omeka/Api/Exception/BadRequestException.php',
         'Interop\\Container\\ContainerInterface' =>
             __DIR__ . '/stubs/Interop/Container/ContainerInterface.php',
     ];

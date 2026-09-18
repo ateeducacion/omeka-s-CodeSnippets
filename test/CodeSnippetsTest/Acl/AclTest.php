@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace CodeSnippetsTest\Acl;
 
+use CodeSnippets\Api\Adapter\SnippetAdapter;
 use CodeSnippets\Controller\Admin\SnippetController;
 use CodeSnippets\Module;
 use CodeSnippetsTest\Support\FakeAcl;
@@ -18,11 +19,17 @@ class AclTest extends TestCase
         $module->registerAcl($acl);
 
         $this->assertNotEmpty($acl->allows);
+        $expectedPrivileges = [
+            Module::RESOURCE_NAME => Module::PRIVILEGES,
+            SnippetController::class => Module::PRIVILEGES,
+            SnippetAdapter::class => Module::API_PRIVILEGES,
+        ];
+
         $roles = [];
         foreach ($acl->allows as $allow) {
             $roles[] = $allow[0];
-            $this->assertContains($allow[1], [Module::RESOURCE_NAME, SnippetController::class]);
-            $this->assertSame(Module::PRIVILEGES, $allow[2]);
+            $this->assertArrayHasKey($allow[1], $expectedPrivileges);
+            $this->assertSame($expectedPrivileges[$allow[1]], $allow[2]);
         }
         $this->assertSame(['global_admin'], array_values(array_unique($roles)));
         $this->assertNotContains('editor', $roles);

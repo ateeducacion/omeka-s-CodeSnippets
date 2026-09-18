@@ -225,4 +225,41 @@ class LifecycleTest extends TestCase
         $module->upgrade('0.0.0', '0.1.0', $locator);
         $this->assertCount(1, $connection->sql);
     }
+
+    public function testApiAdapterIsRegisteredForTheApiResourceName(): void
+    {
+        $config = (new Module())->getConfig();
+
+        $this->assertSame(
+            \CodeSnippets\Api\Adapter\SnippetAdapter::class,
+            $config['api_adapters']['invokables']['code_snippets']
+        );
+    }
+
+    public function testOnlyGlobalAdminMayUseTheApiAdapter(): void
+    {
+        $acl = new \CodeSnippetsTest\Support\FakeAcl();
+        (new Module())->registerAcl($acl);
+
+        $adapter = \CodeSnippets\Api\Adapter\SnippetAdapter::class;
+        $this->assertTrue($acl->isAllowed('global_admin', $adapter, 'search'));
+        $this->assertTrue($acl->isAllowed('global_admin', $adapter, 'create'));
+        $this->assertFalse($acl->isAllowed('editor', $adapter, 'search'));
+        $this->assertFalse($acl->isAllowed('site_admin', $adapter, 'create'));
+    }
+
+    /**
+     * Batch operations are not implemented; leaving them unlisted keeps the
+     * ACL denying them rather than reaching an unimplemented adapter method.
+     */
+    public function testBatchOperationsAreNotAllowedOnTheApiAdapter(): void
+    {
+        $acl = new \CodeSnippetsTest\Support\FakeAcl();
+        (new Module())->registerAcl($acl);
+
+        $adapter = \CodeSnippets\Api\Adapter\SnippetAdapter::class;
+        foreach (['batch_create', 'batch_update', 'batch_delete'] as $operation) {
+            $this->assertFalse($acl->isAllowed('global_admin', $adapter, $operation), $operation);
+        }
+    }
 }
