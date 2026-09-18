@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace CodeSnippets;
 
+use CodeSnippets\Api\Adapter\SnippetAdapter;
 use CodeSnippets\Controller\Admin\SnippetController;
 use CodeSnippets\Db\Schema;
 use CodeSnippets\Install\ExampleSnippets;
@@ -33,6 +34,22 @@ class Module extends AbstractModule
         'edit',
         'activate',
         'deactivate',
+        'delete',
+    ];
+
+    /**
+     * API operations allowed on the adapter. Omeka's API manager checks these
+     * against the adapter resource before dispatching. Batch operations are
+     * deliberately absent: the adapter does not implement them, and leaving
+     * them unlisted keeps them denied.
+     *
+     * @var array<int, string>
+     */
+    public const API_PRIVILEGES = [
+        'search',
+        'read',
+        'create',
+        'update',
         'delete',
     ];
 
@@ -86,8 +103,58 @@ class Module extends AbstractModule
             $acl->addResource(SnippetController::class);
         }
 
+        if (method_exists($acl, 'hasResource') && !$acl->hasResource(SnippetAdapter::class)) {
+            $acl->addResource(SnippetAdapter::class);
+        }
+
         $acl->allow('global_admin', self::RESOURCE_NAME, self::PRIVILEGES);
         $acl->allow('global_admin', SnippetController::class, self::PRIVILEGES);
+        $acl->allow('global_admin', SnippetAdapter::class, self::API_PRIVILEGES);
+    }
+
+    /**
+     * Single checkbox for the API write gate. Rendered as plain markup rather
+     * than a Laminas form: Omeka wraps this in its own <form> and there is one
+     * boolean to collect.
+     *
+     * @param object $renderer Laminas\View\Renderer\PhpRenderer
+     */
+    public function getConfigForm($renderer)
+    {
+        $settings = $this->getServiceLocator()->get('Omeka\Settings');
+        $enabled = (bool) $settings->get(SnippetAdapter::WRITE_SETTING, false);
+        $translate = $renderer->plugin('translate');
+        $escape = $renderer->plugin('escapeHtml');
+        $escapeAttr = $renderer->plugin('escapeHtmlAttr');
+
+        $label = 'Allow snippet writes over the REST API'; // @translate
+        $warning = 'Disabled by default. An API key could then create and change snippet PHP.'; // @translate
+        $note = 'Omeka sends API credentials in the query string, where server logs record them.'; // @translate
+        $reads = 'Reading snippets over the API is not affected by this setting.'; // @translate
+
+        $id = $escapeAttr(SnippetAdapter::WRITE_SETTING);
+
+        return '<div class="field">'
+            . '<div class="field-meta">'
+            . '<label for="' . $id . '">' . $escape($translate($label)) . '</label>'
+            . '</div>'
+            . '<div class="inputs">'
+            . '<input type="checkbox" name="' . $id . '" id="' . $id . '" value="1"'
+            . ($enabled ? ' checked="checked"' : '') . '>'
+            . '<p>' . $escape($translate($warning)) . ' ' . $escape($translate($note)) . '</p>'
+            . '<p>' . $escape($translate($reads)) . '</p>'
+            . '</div></div>';
+    }
+
+    /**
+     * @param object $controller Laminas\Mvc\Controller\AbstractController
+     */
+    public function handleConfigForm($controller)
+    {
+        $settings = $this->getServiceLocator()->get('Omeka\Settings');
+        $posted = $controller->params()->fromPost(SnippetAdapter::WRITE_SETTING);
+        $settings->set(SnippetAdapter::WRITE_SETTING, !empty($posted));
+        return true;
     }
 
     public function install(ServiceLocatorInterface $serviceLocator): void

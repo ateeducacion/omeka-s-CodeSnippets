@@ -25,6 +25,11 @@ return [
             Service\SnippetExecutor::class => Service\Factory\SnippetExecutorFactory::class,
         ],
     ],
+    'api_adapters' => [
+        'invokables' => [
+            Api\Adapter\SnippetAdapter::RESOURCE_NAME => Api\Adapter\SnippetAdapter::class,
+        ],
+    ],
     'controllers' => [
         'factories' => [
             Controller\Admin\SnippetController::class => Controller\Factory\SnippetControllerFactory::class,

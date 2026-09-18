@@ -14,7 +14,10 @@ jobs:
 
       - name: Set environment variables
         run: |
-          echo "RELEASE_TAG=${GITHUB_REF##*/}" >> $GITHUB_ENV
+          # module.ini must carry a bare version. Omeka's addon directory shows
+          # that number, so strip a leading "v" if the tag ever uses one.
+          TAG="${GITHUB_REF##*/}"
+          echo "RELEASE_TAG=${TAG#v}" >> $GITHUB_ENV
 
       - name: Create package using the Makefile
         run: make package VERSION=${RELEASE_TAG}

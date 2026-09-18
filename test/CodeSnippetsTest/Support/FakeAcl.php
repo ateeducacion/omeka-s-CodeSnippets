@@ -26,4 +26,28 @@ class FakeAcl
     {
         $this->allows[] = [$role, $resource, $privileges];
     }
+
+    /**
+     * Deny by default, like Omeka's ACL: a role may do something only when an
+     * allow() call named that role, resource and privilege.
+     *
+     * @param mixed $role
+     * @param mixed $resource
+     * @param mixed $privilege
+     */
+    public function isAllowed($role, $resource = null, $privilege = null): bool
+    {
+        foreach ($this->allows as [$allowedRole, $allowedResource, $privileges]) {
+            if ($allowedRole !== $role || (string) $allowedResource !== (string) $resource) {
+                continue;
+            }
+            if ($privileges === null) {
+                return true;
+            }
+            if (in_array($privilege, (array) $privileges, true)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

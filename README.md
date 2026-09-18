@@ -11,6 +11,8 @@ Manage PHP snippets from the Omeka S admin interface. A global administrator can
 
 This module is inspired by the WordPress Code Snippets plugin as a functional and UX reference. It does not copy that source.
 
+![Editing a snippet in the Omeka S admin interface](https://raw.githubusercontent.com/ateeducacion/omeka-s-CodeSnippets/refs/heads/main/.github/screenshot.png)
+
 ## Installation
 
 Requirements:
@@ -101,11 +103,56 @@ Function and class declarations in a snippet become global for the rest of that 
 
 PHP snippet management is equivalent to executing trusted server-side PHP. A global administrator who can save a snippet can use the database, readable/writable filesystem paths, internal services, network access, and application configuration available to the PHP process.
 
-Only the `global_admin` role may browse, create, edit, activate, deactivate, or delete snippets. That is enforced with Omeka ACL on the controller (not only by hiding UI). CSRF is required for every state-changing POST. Output is escaped. Request input is never passed to `eval()`.
+Only the `global_admin` role may browse, create, edit, activate, deactivate, or delete snippets. That is enforced with Omeka ACL on the controller and on the API adapter (not only by hiding UI). CSRF is required for every state-changing POST. Output is escaped. Request input is never passed to `eval()`.
+
+The REST API applies the same ACL, and additionally keeps writes behind an opt-in setting. See [REST API](#rest-api).
 
 This module does **not** sandbox PHP. There is no function blacklist, regex filter, or keyword stripper.
 
 See [SECURITY.md](SECURITY.md).
+
+## REST API
+
+Snippets are exposed on the Omeka S REST API as `code_snippets`.
+
+| Operation | Request | Enabled by default |
+| --- | --- | --- |
+| Search | `GET /api/code_snippets` | Yes |
+| Read | `GET /api/code_snippets/:id` | Yes |
+| Create | `POST /api/code_snippets` | **No** |
+| Update | `PUT` / `PATCH /api/code_snippets/:id` | **No** |
+| Delete | `DELETE /api/code_snippets/:id` | **No** |
+
+Only `global_admin` may use any of them. Omeka's API manager checks the ACL before the adapter runs, so this is the same boundary the admin interface uses.
+
+```sh
+curl 'https://example.org/api/code_snippets?key_identity=KEY&key_credential=SECRET'
+```
+
+A snippet is returned as:
+
+```json
+{
+  "o:id": 4,
+  "o:name": "Example: add the current year to the site footer",
+  "o:description": "…",
+  "o-module-code-snippets:code": "$shared = $services->get('SharedEventManager');",
+  "o-module-code-snippets:priority": 1,
+  "o-module-code-snippets:run_scope": "global",
+  "o:is_active": true,
+  "o:created": "2026-09-18 16:02:11",
+  "o:modified": "2026-09-18 16:02:11",
+  "o-module-code-snippets:last_error": null
+}
+```
+
+Writes accept only `name`, `description`, `code`, `priority`, `active` and `run_scope`. Any other key in the request body is discarded, so `id` and the `last_error_*` diagnostics cannot be set by a client. Creating or activating a snippet runs the same syntax check as the admin form and answers `422` when it fails.
+
+### Enabling writes
+
+Writes are **disabled by default** and must be turned on in **Admin → Modules → Code Snippets → Configure**. Until then, `POST`, `PUT`, `PATCH` and `DELETE` answer `403` while reads keep working.
+
+This is deliberate. A write accepts PHP that this module later executes, and Omeka sends API credentials in the query string (`?key_identity=…&key_credential=…`), where they reach web server logs, proxy logs and browser history. Leaving writes off means a leaked key cannot become remote code execution. Turn them on only when you need to provision snippets from a script, and treat the key as a server credential. Both safe modes still apply: snippets created over the API do not run while safe mode is active.
 
 ## Safe mode
 
