@@ -23,6 +23,7 @@ return [
             Service\SnippetRepository::class => Service\Factory\SnippetRepositoryFactory::class,
             Service\SnippetService::class => Service\Factory\SnippetServiceFactory::class,
             Service\SnippetExecutor::class => Service\Factory\SnippetExecutorFactory::class,
+            Service\SnippetImportExport::class => Service\Factory\SnippetImportExportFactory::class,
         ],
     ],
     'api_adapters' => [

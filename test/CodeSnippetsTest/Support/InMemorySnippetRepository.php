@@ -129,6 +129,23 @@ class InMemorySnippetRepository implements SnippetRepositoryInterface
     }
 
     /**
+     * @param callable $callback
+     * @return mixed
+     */
+    public function transactional(callable $callback)
+    {
+        $backupSnippets = $this->snippets;
+        $backupNextId = $this->nextId;
+        try {
+            return $callback();
+        } catch (\Throwable $e) {
+            $this->snippets = $backupSnippets;
+            $this->nextId = $backupNextId;
+            throw $e;
+        }
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function require(int $id): array

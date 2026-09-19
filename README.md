@@ -249,6 +249,74 @@ Recovery:
 
 Stored snippets are **not** executed when `PHP_SAPI === 'cli'`. That includes `omeka-s-cli` and background jobs that bootstrap Omeka under CLI. There is no CLI command to execute all snippets.
 
+## Import and export
+
+CodeSnippets provides a reusable domain service, `CodeSnippets\Service\SnippetImportExport`, for exporting and importing portable snippet configurations. This service is designed for automation, future CLI integrations, and external tooling without duplicating business rules or coupling to specific interfaces.
+
+### Portable format
+
+Snippets are exported in a versioned envelope format owned by the CodeSnippets module:
+
+```json
+{
+    "format": "omeka-s-code-snippets",
+    "version": 1,
+    "snippets": [
+        {
+            "name": "Example snippet",
+            "description": "Example description",
+            "code": "$logger = $services->get('Omeka\\Logger');",
+            "priority": 10,
+            "run_scope": "global",
+            "active": false
+        }
+    ]
+}
+```
+
+Database-specific fields (such as numeric IDs, creation/modification timestamps, and runtime error tracking) are excluded so snippets remain portable across Omeka S environments.
+
+The portable schema contains:
+- `name`: string (required)
+- `code`: string (required)
+- `description`: string or null (optional, defaults to `null`)
+- `priority`: integer (optional, defaults to `10`)
+- `run_scope`: string (`global`, `admin`, or `front-end`; optional, defaults to `global`)
+- `active`: boolean (optional, defaults to `false`)
+
+Unknown fields at both the document and snippet level are deliberately ignored during import to maintain forward compatibility with future schema revisions and external metadata.
+
+### Service usage
+
+The service is registered in the Laminas service manager as `CodeSnippets\Service\SnippetImportExport`.
+
+```php
+/** @var \CodeSnippets\Service\SnippetImportExport $importExport */
+$importExport = $services->get(\CodeSnippets\Service\SnippetImportExport::class);
+
+// Export all snippets as an envelope array
+$document = $importExport->exportAll();
+
+// Export a single snippet's portable configuration
+$snippet = $importExport->export($snippetId);
+
+// Export formatted JSON
+$json = $importExport->exportJson();
+
+// Import from an array (single snippet, list of snippets, or envelope document)
+$created = $importExport->import($snippetData);
+$createdList = $importExport->importMany($document);
+
+// Import directly from a JSON string
+$imported = $importExport->importJson($json);
+```
+
+### Safety and duplicate handling
+
+- **Canonical validation:** All imports go through `SnippetService::create()`. Active snippets (`"active": true`) undergo PHP syntax validation before persistence and are rejected if syntax errors exist. Inactive snippets with syntax errors can be stored as inactive.
+- **Transactional safety:** Multi-snippet imports via `importMany()` run inside a database transaction. If any active snippet fails syntax validation or persistence, the entire batch is rolled back and no snippets from that import are stored.
+- **Duplicate handling:** Snippet names in Omeka S CodeSnippets are not unique identifiers. Importing snippets always creates new snippets, even if a snippet with the same name already exists in the database.
+
 ## Error handling
 
 Each snippet runs in its own `try/catch (\Throwable $e)`. A recoverable error:

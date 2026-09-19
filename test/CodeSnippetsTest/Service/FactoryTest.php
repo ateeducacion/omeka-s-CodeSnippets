@@ -7,12 +7,14 @@ namespace CodeSnippetsTest\Service;
 use CodeSnippets\Controller\Admin\SnippetController;
 use CodeSnippets\Controller\Factory\SnippetControllerFactory;
 use CodeSnippets\Service\Factory\SnippetExecutorFactory;
+use CodeSnippets\Service\Factory\SnippetImportExportFactory;
 use CodeSnippets\Service\Factory\SnippetRepositoryFactory;
 use CodeSnippets\Service\Factory\SnippetServiceFactory;
 use CodeSnippets\Service\PhpValidator;
 use CodeSnippets\Service\SafeMode;
 use CodeSnippets\Service\SnippetEvaluator;
 use CodeSnippets\Service\SnippetExecutor;
+use CodeSnippets\Service\SnippetImportExport;
 use CodeSnippets\Service\SnippetRepository;
 use CodeSnippets\Service\SnippetService;
 use CodeSnippetsTest\Support\FakeContainer;
@@ -95,5 +97,19 @@ class FactoryTest extends TestCase
         $factory = new SnippetExecutorFactory();
         $executor = $factory($container, SnippetExecutor::class);
         $this->assertInstanceOf(SnippetExecutor::class, $executor);
+    }
+
+    public function testSnippetImportExportFactory(): void
+    {
+        $container = new FakeContainer([
+            SnippetService::class => new SnippetService(
+                new InMemorySnippetRepository(),
+                new PhpValidator()
+            ),
+            SnippetRepository::class => new InMemorySnippetRepository(),
+        ]);
+        $factory = new SnippetImportExportFactory();
+        $service = $factory($container, SnippetImportExport::class);
+        $this->assertInstanceOf(SnippetImportExport::class, $service);
     }
 }
