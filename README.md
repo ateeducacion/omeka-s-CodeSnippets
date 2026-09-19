@@ -255,7 +255,7 @@ CodeSnippets provides a reusable domain service, `CodeSnippets\Service\SnippetIm
 
 ### Portable format
 
-Snippets are exported in a versioned envelope format owned by the CodeSnippets module:
+The portable interchange format is always a versioned envelope owned by the CodeSnippets module:
 
 ```json
 {
@@ -274,7 +274,7 @@ Snippets are exported in a versioned envelope format owned by the CodeSnippets m
 }
 ```
 
-Database-specific fields (such as numeric IDs, creation/modification timestamps, and runtime error tracking) are excluded so snippets remain portable across Omeka S environments.
+Even a single-snippet export produces a versioned document with a one-element `snippets` array. Database-specific fields (such as numeric IDs, creation/modification timestamps, and runtime error tracking) are excluded so snippets remain portable across Omeka S environments.
 
 The portable schema contains:
 - `name`: string (required)
@@ -294,27 +294,30 @@ The service is registered in the Laminas service manager as `CodeSnippets\Servic
 /** @var \CodeSnippets\Service\SnippetImportExport $importExport */
 $importExport = $services->get(\CodeSnippets\Service\SnippetImportExport::class);
 
-// Export all snippets as an envelope array
+// Export all snippets as a versioned envelope document
 $document = $importExport->exportAll();
 
-// Export a single snippet's portable configuration
-$snippet = $importExport->export($snippetId);
+// Export a single snippet as a versioned envelope document
+$singleDoc = $importExport->export($snippetId);
 
-// Export formatted JSON
-$json = $importExport->exportJson();
+// Export formatted JSON (all snippets or single snippet)
+$allJson = $importExport->exportJson();
+$singleJson = $importExport->exportJson($snippetId);
 
-// Import from an array (single snippet, list of snippets, or envelope document)
-$created = $importExport->import($snippetData);
+// Import a versioned document envelope (atomic batch)
 $createdList = $importExport->importMany($document);
 
-// Import directly from a JSON string
+// Import directly from a JSON string of a versioned document
 $imported = $importExport->importJson($json);
+
+// Programmatic helper: create a single snippet from a raw snippet array
+$created = $importExport->import($rawSnippetData);
 ```
 
 ### Safety and duplicate handling
 
 - **Canonical validation:** All imports go through `SnippetService::create()`. Active snippets (`"active": true`) undergo PHP syntax validation before persistence and are rejected if syntax errors exist. Inactive snippets with syntax errors can be stored as inactive.
-- **Transactional safety:** Multi-snippet imports via `importMany()` run inside a database transaction. If any active snippet fails syntax validation or persistence, the entire batch is rolled back and no snippets from that import are stored.
+- **Transactional contract:** Batch imports via `importMany()` are strictly atomic and execute within the database transaction required by `SnippetRepositoryInterface::transactional()`. Either every snippet is created or none are persisted.
 - **Duplicate handling:** Snippet names in Omeka S CodeSnippets are not unique identifiers. Importing snippets always creates new snippets, even if a snippet with the same name already exists in the database.
 
 ## Error handling

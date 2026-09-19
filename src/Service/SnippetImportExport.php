@@ -10,7 +10,7 @@ use CodeSnippets\Exception\SnippetNotFoundException;
 /**
  * Service for exporting and importing portable snippet configurations.
  *
- * Export format is a versioned envelope containing portable snippet definitions:
+ * Export format is always a versioned envelope containing portable snippet definitions:
  * name, description, code, priority, run_scope, and active status.
  * Internal database identifiers, timestamps, and error logs are excluded.
  *
@@ -58,37 +58,28 @@ class SnippetImportExport
     }
 
     /**
-     * Export a single snippet by ID.
-     *
-     * Returns the portable representation of the snippet. If $asEnvelope is true,
-     * wraps it in a versioned envelope document.
+     * Export a single snippet by ID in a versioned envelope document.
      *
      * @param int $id Snippet database ID
-     * @param bool $asEnvelope Whether to wrap in an envelope
-     * @return array<string, mixed>
+     * @return array<string, mixed> Versioned export document containing the single snippet
      * @throws SnippetNotFoundException If snippet not found
      */
-    public function export(int $id, bool $asEnvelope = false): array
+    public function export(int $id): array
     {
         $snippet = $this->snippetService->find($id);
-        $portable = $this->toPortable($snippet);
 
-        if ($asEnvelope) {
-            return [
-                'format' => self::FORMAT,
-                'version' => self::CURRENT_VERSION,
-                'snippets' => [$portable],
-            ];
-        }
-
-        return $portable;
+        return [
+            'format' => self::FORMAT,
+            'version' => self::CURRENT_VERSION,
+            'snippets' => [$this->toPortable($snippet)],
+        ];
     }
 
     /**
      * Convenience helper to export as JSON string.
      *
-     * When $id is provided, exports that single snippet.
-     * When $id is null, exports all snippets in an envelope document.
+     * When $id is provided, exports that single snippet in a versioned document.
+     * When $id is null, exports all snippets in a versioned document.
      *
      * @param int|null $id Optional snippet ID
      * @return string Formatted JSON
@@ -105,91 +96,50 @@ class SnippetImportExport
     }
 
     /**
-     * Import a single snippet or a single-snippet document.
+     * Import a single raw snippet definition programmatically.
      *
-     * By default, creates a new snippet through SnippetService.
-     * If $data is a document containing multiple snippets, an InvalidImportException
-     * is thrown directing the caller to importMany().
+     * Validates the snippet definition, creates it through SnippetService,
+     * and returns the created snippet row.
      *
-     * @param array<string, mixed> $data Single snippet definition or envelope document
-     * @param array<string, mixed> $options Reserved for future import strategies
+     * Versioned documents must be imported via importMany() or importJson().
+     *
+     * @param array<string, mixed> $snippet Single raw snippet definition
      * @return array<string, mixed> The created snippet row from SnippetService
      * @throws InvalidImportException On validation failure
      */
-    public function import(array $data, array $options = []): array
+    public function import(array $snippet): array
     {
-        if ($this->isDocument($data)) {
-            $this->validateDocument($data);
-            $snippets = $data['snippets'];
-
-            if (count($snippets) === 0) {
-                return [];
-            }
-
-            if (count($snippets) === 1) {
-                $snippet = $snippets[0];
-                if (!is_array($snippet)) {
-                    throw new InvalidImportException('Snippet must be an array.');
-                }
-                $this->validateSnippet($snippet);
-                $prepared = $this->prepareSnippetData($snippet);
-                return $this->snippetService->create($prepared);
-            }
-
-            throw new InvalidImportException(sprintf(
-                'Document contains %d snippets. Use importMany() to import multiple snippets.',
-                count($snippets)
-            ));
+        if (array_key_exists('format', $snippet)
+            && array_key_exists('version', $snippet)
+            && array_key_exists('snippets', $snippet)
+        ) {
+            throw new InvalidImportException(
+                'The import() method accepts a single raw snippet array. '
+                . 'Use importMany() or importJson() to import versioned documents.'
+            );
         }
 
-        if ($this->isSnippetList($data)) {
-            if (count($data) === 0) {
-                return [];
-            }
+        $this->validateSnippet($snippet);
+        $prepared = $this->prepareSnippetData($snippet);
 
-            if (count($data) === 1) {
-                $snippet = $data[0];
-                if (!is_array($snippet)) {
-                    throw new InvalidImportException('Snippet must be an array.');
-                }
-                $this->validateSnippet($snippet);
-                $prepared = $this->prepareSnippetData($snippet);
-                return $this->snippetService->create($prepared);
-            }
-
-            throw new InvalidImportException(sprintf(
-                'List contains %d snippets. Use importMany() to import multiple snippets.',
-                count($data)
-            ));
-        }
-
-        $this->validateSnippet($data);
-        $prepared = $this->prepareSnippetData($data);
         return $this->snippetService->create($prepared);
     }
 
     /**
-     * Import multiple snippets from an envelope document or a list of snippets.
+     * Import snippets from a canonical versioned envelope document.
      *
-     * Pre-validates all snippets before persisting. Persists transactionally
-     * so either all snippets are created or none are persisted if an error occurs.
+     * Pre-validates all snippets before persisting. Batch imports are strictly
+     * atomic through the repository transaction: either all snippets are created
+     * or none are persisted if an error occurs.
      *
-     * @param array<mixed> $data Document envelope or array of snippets
-     * @param array<string, mixed> $options Reserved for future import strategies
+     * @param array<string, mixed> $document Canonical versioned document envelope
      * @return array<int, array<string, mixed>> Created snippet rows
      * @throws InvalidImportException On validation failure
      */
-    public function importMany(array $data, array $options = []): array
+    public function importMany(array $document): array
     {
-        if ($this->isDocument($data)) {
-            $this->validateDocument($data);
-            $snippets = $data['snippets'];
-        } elseif ($this->isSnippetList($data)) {
-            $snippets = $data;
-        } else {
-            $this->validateSnippet($data);
-            $snippets = [$data];
-        }
+        $this->validateDocument($document);
+        $snippets = $document['snippets'];
 
         foreach ($snippets as $index => $snippet) {
             if (!is_array($snippet)) {
@@ -205,31 +155,26 @@ class SnippetImportExport
             return [];
         }
 
-        $execute = function () use ($snippets) {
+        return $this->repository->transactional(function () use ($snippets) {
             $created = [];
             foreach ($snippets as $snippet) {
                 $prepared = $this->prepareSnippetData($snippet);
                 $created[] = $this->snippetService->create($prepared);
             }
             return $created;
-        };
-
-        if (method_exists($this->repository, 'transactional')) {
-            return $this->repository->transactional($execute);
-        }
-
-        return $execute();
+        });
     }
 
     /**
      * Convenience helper to import from a JSON string.
      *
-     * @param string $json JSON string
-     * @param array<string, mixed> $options
+     * Expects the canonical versioned document format.
+     *
+     * @param string $json JSON string of a versioned document
      * @return array<int, array<string, mixed>> List of created snippets
      * @throws InvalidImportException On JSON parse or validation error
      */
-    public function importJson(string $json, array $options = []): array
+    public function importJson(string $json): array
     {
         try {
             $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
@@ -245,7 +190,7 @@ class SnippetImportExport
             throw new InvalidImportException('Decoded JSON must be an array or object.');
         }
 
-        return $this->importMany($data, $options);
+        return $this->importMany($data);
     }
 
     /**
@@ -372,8 +317,7 @@ class SnippetImportExport
 
         if (array_key_exists('priority', $snippet)
             && $snippet['priority'] !== null
-            && $snippet['priority'] !== ''
-        ) {
+            && $snippet['priority'] !== '') {
             if (!is_int($snippet['priority'])
                 && (!is_string($snippet['priority']) || !preg_match('/^-?\d+$/', $snippet['priority']))
             ) {
@@ -383,8 +327,7 @@ class SnippetImportExport
 
         if (array_key_exists('run_scope', $snippet)
             && $snippet['run_scope'] !== null
-            && $snippet['run_scope'] !== ''
-        ) {
+            && $snippet['run_scope'] !== '') {
             if (!is_string($snippet['run_scope'])
                 || !in_array($snippet['run_scope'], SnippetScope::all(), true)
             ) {
@@ -412,28 +355,6 @@ class SnippetImportExport
                 throw new InvalidImportException('Snippet "description" must be a string or null.');
             }
         }
-    }
-
-    /**
-     * @param array<mixed> $data
-     */
-    private function isDocument(array $data): bool
-    {
-        return array_key_exists('format', $data)
-            || array_key_exists('snippets', $data)
-            || array_key_exists('version', $data);
-    }
-
-    /**
-     * @param array<mixed> $data
-     */
-    private function isSnippetList(array $data): bool
-    {
-        if ($data === []) {
-            return true;
-        }
-
-        return array_keys($data) === range(0, count($data) - 1);
     }
 
     /**

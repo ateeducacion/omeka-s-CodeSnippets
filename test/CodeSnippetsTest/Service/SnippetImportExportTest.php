@@ -11,6 +11,7 @@ use CodeSnippets\Exception\SnippetNotFoundException;
 use CodeSnippets\Service\PhpValidator;
 use CodeSnippets\Service\SnippetImportExport;
 use CodeSnippets\Service\SnippetRepository;
+use CodeSnippets\Service\SnippetRepositoryInterface;
 use CodeSnippets\Service\SnippetScope;
 use CodeSnippets\Service\SnippetService;
 use CodeSnippetsTest\Support\InMemorySnippetRepository;
@@ -37,6 +38,19 @@ class SnippetImportExportTest extends TestCase
     }
 
     // =========================================================================
+    // Contract Tests
+    // =========================================================================
+
+    public function testSnippetRepositoryInterfaceRequiresTransactional(): void
+    {
+        $reflection = new \ReflectionClass(SnippetRepositoryInterface::class);
+        $this->assertTrue($reflection->hasMethod('transactional'));
+
+        $method = $reflection->getMethod('transactional');
+        $this->assertSame(1, $method->getNumberOfParameters());
+    }
+
+    // =========================================================================
     // Export Tests
     // =========================================================================
 
@@ -49,7 +63,7 @@ class SnippetImportExportTest extends TestCase
         $this->assertSame([], $export['snippets']);
     }
 
-    public function testExportOneSnippetReturnsPortableRepresentation(): void
+    public function testExportOneSnippetReturnsVersionedEnvelope(): void
     {
         $created = $this->snippetService->create([
             'name' => 'Single Snippet',
@@ -62,6 +76,11 @@ class SnippetImportExportTest extends TestCase
 
         $exported = $this->service->export((int) $created['id']);
 
+        $this->assertSame(SnippetImportExport::FORMAT, $exported['format']);
+        $this->assertSame(SnippetImportExport::CURRENT_VERSION, $exported['version']);
+        $this->assertCount(1, $exported['snippets']);
+
+        $snippet = $exported['snippets'][0];
         $this->assertSame([
             'name' => 'Single Snippet',
             'description' => 'A test description',
@@ -69,31 +88,16 @@ class SnippetImportExportTest extends TestCase
             'priority' => 5,
             'run_scope' => 'admin',
             'active' => false,
-        ], $exported);
+        ], $snippet);
 
         // Verify exclusion of database IDs, timestamps, and error fields
-        $this->assertArrayNotHasKey('id', $exported);
-        $this->assertArrayNotHasKey('created', $exported);
-        $this->assertArrayNotHasKey('modified', $exported);
-        $this->assertArrayNotHasKey('last_error_type', $exported);
-        $this->assertArrayNotHasKey('last_error_message', $exported);
-        $this->assertArrayNotHasKey('last_error_line', $exported);
-        $this->assertArrayNotHasKey('last_error_at', $exported);
-    }
-
-    public function testExportOneSnippetAsEnvelope(): void
-    {
-        $created = $this->snippetService->create([
-            'name' => 'Wrapped Snippet',
-            'code' => '$x = 1;',
-        ]);
-
-        $exported = $this->service->export((int) $created['id'], true);
-
-        $this->assertSame(SnippetImportExport::FORMAT, $exported['format']);
-        $this->assertSame(SnippetImportExport::CURRENT_VERSION, $exported['version']);
-        $this->assertCount(1, $exported['snippets']);
-        $this->assertSame('Wrapped Snippet', $exported['snippets'][0]['name']);
+        $this->assertArrayNotHasKey('id', $snippet);
+        $this->assertArrayNotHasKey('created', $snippet);
+        $this->assertArrayNotHasKey('modified', $snippet);
+        $this->assertArrayNotHasKey('last_error_type', $snippet);
+        $this->assertArrayNotHasKey('last_error_message', $snippet);
+        $this->assertArrayNotHasKey('last_error_line', $snippet);
+        $this->assertArrayNotHasKey('last_error_at', $snippet);
     }
 
     public function testExportAllWithMultipleSnippets(): void
@@ -124,23 +128,28 @@ class SnippetImportExportTest extends TestCase
         $this->service->export(999);
     }
 
-    public function testExportJsonHelper(): void
+    public function testExportJsonIncludesFormatAndVersion(): void
     {
         $created = $this->snippetService->create([
             'name' => 'Json Export',
             'code' => '$y = 2;',
         ]);
 
+        // Export all as JSON
         $jsonAll = $this->service->exportJson();
         $decodedAll = json_decode($jsonAll, true);
         $this->assertSame(SnippetImportExport::FORMAT, $decodedAll['format']);
         $this->assertSame(SnippetImportExport::CURRENT_VERSION, $decodedAll['version']);
         $this->assertCount(1, $decodedAll['snippets']);
 
+        // Export single snippet as JSON
         $jsonSingle = $this->service->exportJson((int) $created['id']);
         $decodedSingle = json_decode($jsonSingle, true);
-        $this->assertSame('Json Export', $decodedSingle['name']);
-        $this->assertSame('$y = 2;', $decodedSingle['code']);
+        $this->assertSame(SnippetImportExport::FORMAT, $decodedSingle['format']);
+        $this->assertSame(SnippetImportExport::CURRENT_VERSION, $decodedSingle['version']);
+        $this->assertCount(1, $decodedSingle['snippets']);
+        $this->assertSame('Json Export', $decodedSingle['snippets'][0]['name']);
+        $this->assertSame('$y = 2;', $decodedSingle['snippets'][0]['code']);
     }
 
     // =========================================================================
@@ -149,7 +158,7 @@ class SnippetImportExportTest extends TestCase
 
     public function testImportValidInactiveSnippet(): void
     {
-        $data = [
+        $snippet = [
             'name' => 'Inactive Snippet',
             'description' => 'Test desc',
             'code' => '$x = 1;',
@@ -158,7 +167,7 @@ class SnippetImportExportTest extends TestCase
             'active' => false,
         ];
 
-        $imported = $this->service->import($data);
+        $imported = $this->service->import($snippet);
 
         $this->assertArrayHasKey('id', $imported);
         $this->assertSame('Inactive Snippet', $imported['name']);
@@ -171,19 +180,34 @@ class SnippetImportExportTest extends TestCase
 
     public function testImportValidActiveSnippet(): void
     {
-        $data = [
+        $snippet = [
             'name' => 'Active Snippet',
             'code' => '$x = 1;',
             'active' => true,
         ];
 
-        $imported = $this->service->import($data);
+        $imported = $this->service->import($snippet);
 
         $this->assertTrue($imported['active']);
         $this->assertSame('$x = 1;', $imported['code']);
     }
 
-    public function testImportMultipleSnippetsViaDocument(): void
+    public function testImportRejectsVersionedDocumentWithClearMessage(): void
+    {
+        $document = [
+            'format' => SnippetImportExport::FORMAT,
+            'version' => SnippetImportExport::CURRENT_VERSION,
+            'snippets' => [
+                ['name' => 'Snippet', 'code' => '$x = 1;'],
+            ],
+        ];
+
+        $this->expectException(InvalidImportException::class);
+        $this->expectExceptionMessage('The import() method accepts a single raw snippet array');
+        $this->service->import($document);
+    }
+
+    public function testImportManyValidVersionedDocument(): void
     {
         $document = [
             'format' => SnippetImportExport::FORMAT,
@@ -202,23 +226,20 @@ class SnippetImportExportTest extends TestCase
         $this->assertCount(2, $this->snippetService->findAll());
     }
 
-    public function testImportMultipleSnippetsViaList(): void
+    public function testImportManyEmptyDocumentReturnsEmpty(): void
     {
-        $list = [
-            ['name' => 'First', 'code' => '$a = 1;'],
-            ['name' => 'Second', 'code' => '$b = 2;'],
+        $document = [
+            'format' => SnippetImportExport::FORMAT,
+            'version' => SnippetImportExport::CURRENT_VERSION,
+            'snippets' => [],
         ];
 
-        $imported = $this->service->importMany($list);
-
-        $this->assertCount(2, $imported);
-        $this->assertSame('First', $imported[0]['name']);
-        $this->assertSame('Second', $imported[1]['name']);
+        $this->assertSame([], $this->service->importMany($document));
     }
 
     public function testImportPreservesAllPortableFields(): void
     {
-        $data = [
+        $snippet = [
             'name' => 'Preserved',
             'description' => 'Custom description',
             'code' => '$z = 100;',
@@ -227,7 +248,7 @@ class SnippetImportExportTest extends TestCase
             'active' => true,
         ];
 
-        $imported = $this->service->import($data);
+        $imported = $this->service->import($snippet);
 
         $this->assertSame('Preserved', $imported['name']);
         $this->assertSame('Custom description', $imported['description']);
@@ -239,44 +260,44 @@ class SnippetImportExportTest extends TestCase
 
     public function testImportNormalizesPhpOpeningTag(): void
     {
-        $data = [
+        $snippet = [
             'name' => 'Tagged Snippet',
             'code' => "<?php\n\$result = 'hello';\n?>",
             'active' => true,
         ];
 
-        $imported = $this->service->import($data);
+        $imported = $this->service->import($snippet);
 
         $this->assertSame("\$result = 'hello';", $imported['code']);
     }
 
     public function testImportActiveInvalidPhpSyntaxIsRejected(): void
     {
-        $data = [
+        $snippet = [
             'name' => 'Broken Active',
             'code' => 'if (',
             'active' => true,
         ];
 
         $this->expectException(InvalidSyntaxException::class);
-        $this->service->import($data);
+        $this->service->import($snippet);
     }
 
     public function testImportInactiveInvalidPhpSyntaxIsAllowed(): void
     {
-        $data = [
+        $snippet = [
             'name' => 'Broken Inactive',
             'code' => 'if (',
             'active' => false,
         ];
 
-        $imported = $this->service->import($data);
+        $imported = $this->service->import($snippet);
 
         $this->assertSame('if (', $imported['code']);
         $this->assertFalse($imported['active']);
     }
 
-    public function testImportRejectsUnsupportedVersion(): void
+    public function testImportManyRejectsUnsupportedVersion(): void
     {
         $document = [
             'format' => SnippetImportExport::FORMAT,
@@ -291,7 +312,7 @@ class SnippetImportExportTest extends TestCase
         $this->service->importMany($document);
     }
 
-    public function testImportRejectsInvalidFormat(): void
+    public function testImportManyRejectsInvalidFormat(): void
     {
         $document = [
             'format' => 'unsupported-format',
@@ -304,7 +325,7 @@ class SnippetImportExportTest extends TestCase
         $this->service->importMany($document);
     }
 
-    public function testImportRejectsMissingSnippetsField(): void
+    public function testImportManyRejectsMissingSnippetsField(): void
     {
         $document = [
             'format' => SnippetImportExport::FORMAT,
@@ -316,7 +337,7 @@ class SnippetImportExportTest extends TestCase
         $this->service->importMany($document);
     }
 
-    public function testImportRejectsNonArraySnippetsField(): void
+    public function testImportManyRejectsNonArraySnippetsField(): void
     {
         $document = [
             'format' => SnippetImportExport::FORMAT,
@@ -329,7 +350,7 @@ class SnippetImportExportTest extends TestCase
         $this->service->importMany($document);
     }
 
-    public function testImportRejectsNonArraySnippetInList(): void
+    public function testImportManyRejectsNonArraySnippetInList(): void
     {
         $document = [
             'format' => SnippetImportExport::FORMAT,
@@ -457,55 +478,7 @@ class SnippetImportExportTest extends TestCase
         $this->assertCount(2, $this->snippetService->findAll());
     }
 
-    public function testImportDocumentWithSingleSnippetUsingImportMethod(): void
-    {
-        $document = [
-            'format' => SnippetImportExport::FORMAT,
-            'version' => SnippetImportExport::CURRENT_VERSION,
-            'snippets' => [
-                ['name' => 'Only Snippet', 'code' => '$x = 1;'],
-            ],
-        ];
-
-        $imported = $this->service->import($document);
-
-        $this->assertSame('Only Snippet', $imported['name']);
-        $this->assertCount(1, $this->snippetService->findAll());
-    }
-
-    public function testImportDocumentWithMultipleSnippetsUsingImportMethodThrows(): void
-    {
-        $document = [
-            'format' => SnippetImportExport::FORMAT,
-            'version' => SnippetImportExport::CURRENT_VERSION,
-            'snippets' => [
-                ['name' => 'First', 'code' => '$a = 1;'],
-                ['name' => 'Second', 'code' => '$b = 2;'],
-            ],
-        ];
-
-        $this->expectException(InvalidImportException::class);
-        $this->expectExceptionMessage('Document contains 2 snippets. Use importMany() to import multiple snippets.');
-        $this->service->import($document);
-    }
-
-    public function testImportManyWithEmptyArrayReturnsEmpty(): void
-    {
-        $this->assertSame([], $this->service->importMany([]));
-    }
-
-    public function testImportManyWithEmptyDocumentReturnsEmpty(): void
-    {
-        $document = [
-            'format' => SnippetImportExport::FORMAT,
-            'version' => SnippetImportExport::CURRENT_VERSION,
-            'snippets' => [],
-        ];
-
-        $this->assertSame([], $this->service->importMany($document));
-    }
-
-    public function testImportTransactionalRollbackOnInMemoryRepository(): void
+    public function testImportManyTransactionalRollbackOnInMemoryRepository(): void
     {
         $document = [
             'format' => SnippetImportExport::FORMAT,
@@ -520,12 +493,12 @@ class SnippetImportExportTest extends TestCase
             $this->service->importMany($document);
             $this->fail('Expected InvalidSyntaxException');
         } catch (InvalidSyntaxException $e) {
-            // Neither snippet should be persisted
+            // Atomic guarantee: neither snippet is persisted
             $this->assertCount(0, $this->snippetService->findAll());
         }
     }
 
-    public function testImportTransactionalRollbackOnDatabaseRepository(): void
+    public function testImportManyTransactionalRollbackOnDatabaseRepository(): void
     {
         if (!in_array('sqlite', PDO::getAvailableDrivers(), true)) {
             $this->markTestSkipped('pdo_sqlite is required');
@@ -592,6 +565,38 @@ class SnippetImportExportTest extends TestCase
         $this->service->importJson('"just a string"');
     }
 
+    public function testValidateDocumentRejectsNonScalarFormatAndVersion(): void
+    {
+        try {
+            $this->service->importMany(['format' => ['array'], 'version' => 1, 'snippets' => []]);
+            $this->fail('Expected InvalidImportException');
+        } catch (InvalidImportException $e) {
+            $this->assertStringContainsString('Invalid or missing format identifier', $e->getMessage());
+        }
+
+        try {
+            $this->service->importMany([
+                'format' => SnippetImportExport::FORMAT,
+                'version' => ['array'],
+                'snippets' => [],
+            ]);
+            $this->fail('Expected InvalidImportException');
+        } catch (InvalidImportException $e) {
+            $this->assertStringContainsString('Unsupported format version', $e->getMessage());
+        }
+    }
+
+    public function testValidateSnippetRejectsNonScalarRunScope(): void
+    {
+        $this->expectException(InvalidImportException::class);
+        $this->expectExceptionMessage('Invalid run_scope "array"');
+        $this->service->import([
+            'name' => 'Non scalar scope',
+            'code' => '$x = 1;',
+            'run_scope' => ['array'],
+        ]);
+    }
+
     // =========================================================================
     // Round Trip Tests
     // =========================================================================
@@ -642,6 +647,30 @@ class SnippetImportExportTest extends TestCase
         $this->assertSame($export1, $export2);
     }
 
+    public function testSingleSnippetRoundTrip(): void
+    {
+        $created = $this->snippetService->create([
+            'name' => 'Single Round Trip',
+            'description' => 'Single description',
+            'code' => '$s = "single";',
+            'priority' => 7,
+            'run_scope' => SnippetScope::ADMIN,
+            'active' => true,
+        ]);
+
+        $export1 = $this->service->export((int) $created['id']);
+
+        $freshRepository = new InMemorySnippetRepository();
+        $freshSnippetService = new SnippetService($freshRepository, new PhpValidator());
+        $freshService = new SnippetImportExport($freshSnippetService, $freshRepository);
+
+        $freshService->importMany($export1);
+
+        $export2 = $freshService->exportAll();
+
+        $this->assertSame($export1, $export2);
+    }
+
     public function testJsonRoundTrip(): void
     {
         $this->snippetService->create([
@@ -664,159 +693,5 @@ class SnippetImportExportTest extends TestCase
         $json2 = $freshService->exportJson();
 
         $this->assertSame($json1, $json2);
-    }
-
-    public function testImportSingleSnippetInListUsingImportMethod(): void
-    {
-        $imported = $this->service->import([
-            ['name' => 'Single in list', 'code' => '$x = 1;'],
-        ]);
-
-        $this->assertSame('Single in list', $imported['name']);
-        $this->assertCount(1, $this->snippetService->findAll());
-    }
-
-    public function testImportMultipleSnippetsInListUsingImportMethodThrows(): void
-    {
-        $this->expectException(InvalidImportException::class);
-        $this->expectExceptionMessage('List contains 2 snippets. Use importMany() to import multiple snippets.');
-        $this->service->import([
-            ['name' => 'A', 'code' => '$a = 1;'],
-            ['name' => 'B', 'code' => '$b = 2;'],
-        ]);
-    }
-
-    public function testImportListWithNonArrayElementUsingImportMethodThrows(): void
-    {
-        $this->expectException(InvalidImportException::class);
-        $this->expectExceptionMessage('Snippet must be an array.');
-        $this->service->import(['not an array']);
-    }
-
-    public function testImportEmptyListUsingImportMethodReturnsEmpty(): void
-    {
-        $this->assertSame([], $this->service->import([]));
-    }
-
-    public function testImportEmptyDocumentUsingImportMethodReturnsEmpty(): void
-    {
-        $document = [
-            'format' => SnippetImportExport::FORMAT,
-            'version' => SnippetImportExport::CURRENT_VERSION,
-            'snippets' => [],
-        ];
-
-        $this->assertSame([], $this->service->import($document));
-    }
-
-    public function testImportDocumentWithNonArrayElementUsingImportMethodThrows(): void
-    {
-        $document = [
-            'format' => SnippetImportExport::FORMAT,
-            'version' => SnippetImportExport::CURRENT_VERSION,
-            'snippets' => ['not an array'],
-        ];
-
-        $this->expectException(InvalidImportException::class);
-        $this->expectExceptionMessage('Snippet must be an array.');
-        $this->service->import($document);
-    }
-
-    public function testImportManyWithoutTransactionalSupportOnRepository(): void
-    {
-        $nonTransactionalRepo = new class implements \CodeSnippets\Service\SnippetRepositoryInterface {
-            /** @var array<int, array<string, mixed>> */
-            private $items = [];
-            private $nextId = 1;
-
-            public function find(int $id): ?array
-            {
-                return $this->items[$id] ?? null;
-            }
-
-            public function findAll(): array
-            {
-                return array_values($this->items);
-            }
-
-            public function findActiveOrdered(?string $requestScope = null): array
-            {
-                return [];
-            }
-
-            public function create(array $data): array
-            {
-                $id = $this->nextId++;
-                $data['id'] = $id;
-                $this->items[$id] = $data;
-                return $data;
-            }
-
-            public function update(int $id, array $data): array
-            {
-                return $this->items[$id] = $data;
-            }
-
-            public function delete(int $id): void
-            {
-                unset($this->items[$id]);
-            }
-
-            public function activate(int $id): array
-            {
-                return $this->items[$id];
-            }
-
-            public function deactivate(int $id): array
-            {
-                return $this->items[$id];
-            }
-
-            public function recordError(int $id, string $type, string $message, ?int $line): void
-            {
-            }
-        };
-
-        $snippetService = new SnippetService($nonTransactionalRepo, new PhpValidator());
-        $importExport = new SnippetImportExport($snippetService, $nonTransactionalRepo);
-
-        $imported = $importExport->importMany([
-            ['name' => 'Non-tx 1', 'code' => '$a = 1;'],
-            ['name' => 'Non-tx 2', 'code' => '$b = 2;'],
-        ]);
-
-        $this->assertCount(2, $imported);
-    }
-
-    public function testValidateDocumentRejectsNonScalarFormatAndVersion(): void
-    {
-        try {
-            $this->service->importMany(['format' => ['array'], 'version' => 1, 'snippets' => []]);
-            $this->fail('Expected InvalidImportException');
-        } catch (InvalidImportException $e) {
-            $this->assertStringContainsString('Invalid or missing format identifier', $e->getMessage());
-        }
-
-        try {
-            $this->service->importMany([
-                'format' => SnippetImportExport::FORMAT,
-                'version' => ['array'],
-                'snippets' => [],
-            ]);
-            $this->fail('Expected InvalidImportException');
-        } catch (InvalidImportException $e) {
-            $this->assertStringContainsString('Unsupported format version', $e->getMessage());
-        }
-    }
-
-    public function testValidateSnippetRejectsNonScalarRunScope(): void
-    {
-        $this->expectException(InvalidImportException::class);
-        $this->expectExceptionMessage('Invalid run_scope "array"');
-        $this->service->import([
-            'name' => 'Non scalar scope',
-            'code' => '$x = 1;',
-            'run_scope' => ['array'],
-        ]);
     }
 }
