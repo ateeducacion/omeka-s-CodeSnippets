@@ -17,6 +17,11 @@ namespace CodeSnippets\Service;
  * failures are logged and recorded; later snippets still run. This is not a
  * sandbox: exit, die, memory exhaustion, hard timeouts, and some engine-level
  * fatals (including redeclaring a function or class) cannot be recovered.
+ *
+ * Loading the snippets is guarded the same way. This listener runs on every
+ * HTTP request, so an unreadable table (a pending schema upgrade, a database
+ * failure) must skip execution rather than fail the request: otherwise the
+ * whole site, public pages included, answers with an error.
  */
 class SnippetExecutor
 {
@@ -107,7 +112,13 @@ class SnippetExecutor
             return 0;
         }
 
-        $snippets = $this->repository->findActiveOrdered(SnippetScope::fromMvcEvent($event));
+        try {
+            $snippets = $this->repository->findActiveOrdered(SnippetScope::fromMvcEvent($event));
+        } catch (\Throwable $throwable) {
+            $this->logLoadFailure($throwable);
+            return 0;
+        }
+
         $invoked = 0;
         foreach ($snippets as $snippet) {
             $id = (int) $snippet['id'];
@@ -168,6 +179,18 @@ class SnippetExecutor
         } catch (\Throwable $ignored) {
             $this->logError($id, $name, get_class($ignored), $ignored->getMessage(), $ignored->getLine());
         }
+    }
+
+    private function logLoadFailure(\Throwable $throwable): void
+    {
+        if ($this->logger === null || !method_exists($this->logger, 'err')) {
+            return;
+        }
+        $this->logger->err(sprintf(
+            'CodeSnippets: snippets could not be loaded, none were run: %s: %s',
+            get_class($throwable),
+            $throwable->getMessage()
+        ));
     }
 
     private function logError(int $id, string $name, string $type, string $message, int $line): void

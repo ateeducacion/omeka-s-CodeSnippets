@@ -9,9 +9,10 @@ use Omeka\Api\Representation\AbstractResourceRepresentation;
 /**
  * JSON-LD representation of a snippet.
  *
- * Only global_admin reaches this class: Omeka's API manager checks the ACL
- * before the adapter runs, and the adapter is allowed for global_admin alone.
- * The stored PHP is therefore included, matching what the admin UI shows.
+ * Omeka's API manager checks the ACL before the adapter runs, so only the
+ * principals Module::registerAcl allows reach this class: global_admin, plus
+ * any role or named user the operator added. The stored PHP is therefore
+ * included, matching what the admin UI shows those same people.
  */
 class SnippetRepresentation extends AbstractResourceRepresentation
 {
