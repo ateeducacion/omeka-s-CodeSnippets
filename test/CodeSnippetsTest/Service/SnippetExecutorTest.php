@@ -433,6 +433,51 @@ class SnippetExecutorTest extends TestCase
         $this->assertStringContainsString('persist failed', $logger->messages[1]);
     }
 
+    public function testSnippetLoadFailureIsLoggedAndDoesNotEscape(): void
+    {
+        $repository = new class extends InMemorySnippetRepository {
+            public function findActiveOrdered(?string $requestScope = null): array
+            {
+                throw new \RuntimeException('Unknown column \'run_scope\'');
+            }
+        };
+        $logger = new LoggerSpy();
+        $executor = new SnippetExecutor(
+            $repository,
+            new SafeMode(),
+            new SnippetEvaluator(),
+            new PhpValidator(),
+            $logger,
+            null
+        );
+
+        $this->assertSame(0, $executor->run(null, null, [], 'global_admin', 'fpm-fcgi'));
+        $this->assertCount(1, $logger->messages);
+        $this->assertStringContainsString('none were run', $logger->messages[0]);
+        $this->assertStringContainsString('run_scope', $logger->messages[0]);
+    }
+
+    public function testSnippetLoadFailureWithoutLoggerIsStillContained(): void
+    {
+        $repository = new class extends InMemorySnippetRepository {
+            public function findActiveOrdered(?string $requestScope = null): array
+            {
+                throw new \RuntimeException('database gone');
+            }
+        };
+        $executor = new SnippetExecutor(
+            $repository,
+            new SafeMode(),
+            new SnippetEvaluator(),
+            new PhpValidator(),
+            null,
+            null
+        );
+
+        $this->assertSame(0, $executor->run(null, null, [], null, 'fpm-fcgi'));
+        $this->assertTrue($executor->hasStarted());
+    }
+
     public function testLoggerWithoutErrIsIgnored(): void
     {
         $this->repository->create([
