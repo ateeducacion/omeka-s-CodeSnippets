@@ -41,6 +41,14 @@ class ModuleConfigTest extends TestCase
         );
     }
 
+    public function testSnippetImportExportServiceIsRegistered(): void
+    {
+        $this->assertArrayHasKey(
+            \CodeSnippets\Service\SnippetImportExport::class,
+            $this->config['service_manager']['factories']
+        );
+    }
+
     public function testAdminNavigationExists(): void
     {
         $nav = $this->config['navigation']['AdminModule'][0];

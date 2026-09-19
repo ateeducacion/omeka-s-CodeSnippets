@@ -51,4 +51,12 @@ interface SnippetRepositoryInterface
     public function deactivate(int $id): array;
 
     public function recordError(int $id, string $type, string $message, ?int $line): void;
+
+    /**
+     * Execute a callback within a database transaction.
+     *
+     * @param callable $callback
+     * @return mixed
+     */
+    public function transactional(callable $callback);
 }
