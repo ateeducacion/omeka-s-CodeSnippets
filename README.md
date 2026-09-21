@@ -26,6 +26,16 @@ Manage PHP snippets from the Omeka S admin interface, without editing a theme or
 
 Snippets run with the privileges of the Omeka S PHP process. Only `global_admin` may manage them by default; other roles can be allowed in the module configuration, with the consequences described in [who may manage snippets](#who-may-manage-snippets). Read the [security model](#security-model) before using this on a production site.
 
+### When not to use this module
+
+CodeSnippets intentionally allows trusted administrators to execute server-side PHP. This increases the executable attack surface of an Omeka S installation.
+
+If minimizing executable attack surface is more important than administrative flexibility, do not install this module. Implement custom behavior as reviewed module or application code instead.
+
+CodeSnippets is intended for trusted-administrator environments where rapid, controlled adjustments are useful, such as development, prototyping, managed installations, or production sites where that operational flexibility is an accepted trade-off.
+
+For deployments with stricter database-integrity requirements, [optional HMAC signing](#optional-database-integrity-signing) is available, but it does not turn arbitrary PHP execution into a sandbox or remove the underlying trust requirement.
+
 ## Installation
 
 Requirements:
