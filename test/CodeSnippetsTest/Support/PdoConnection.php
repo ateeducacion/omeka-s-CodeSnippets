@@ -15,8 +15,11 @@ class PdoConnection
     /** @var PDO */
     private $pdo;
 
+    /** @var int */
+    private $transactionLevel = 0;
+
     /** @var bool */
-    private $inTransaction = false;
+    private $rollbackOnly = false;
 
     public function __construct(PDO $pdo)
     {
@@ -88,25 +91,37 @@ class PdoConnection
 
     public function beginTransaction(): void
     {
-        $this->pdo->beginTransaction();
-        $this->inTransaction = true;
+        if ($this->transactionLevel === 0) {
+            $this->pdo->beginTransaction();
+        }
+        $this->transactionLevel++;
     }
 
     public function commit(): void
     {
-        $this->pdo->commit();
-        $this->inTransaction = false;
+        if ($this->rollbackOnly) {
+            throw new \RuntimeException('Transaction is marked rollback-only.');
+        }
+        if ($this->transactionLevel === 1) {
+            $this->pdo->commit();
+        }
+        $this->transactionLevel--;
     }
 
     public function rollBack(): void
     {
-        $this->pdo->rollBack();
-        $this->inTransaction = false;
+        if ($this->transactionLevel === 1) {
+            $this->pdo->rollBack();
+            $this->rollbackOnly = false;
+        } else {
+            $this->rollbackOnly = true;
+        }
+        $this->transactionLevel--;
     }
 
     public function isTransactionActive(): bool
     {
-        return $this->inTransaction;
+        return $this->transactionLevel > 0;
     }
 
     public function exec(string $sql): void

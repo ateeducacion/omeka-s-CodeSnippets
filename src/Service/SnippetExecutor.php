@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace CodeSnippets\Service;
 
+use CodeSnippets\Exception\SnippetIntegrityException;
+
 /**
  * Runs active snippets once per HTTP request, in priority order.
  *
@@ -46,6 +48,9 @@ class SnippetExecutor
     /** @var object|null */
     private $authenticationService;
 
+    /** @var SnippetSigner */
+    private $signer;
+
     /** @var bool */
     private $started = false;
 
@@ -62,7 +67,8 @@ class SnippetExecutor
         SnippetEvaluator $evaluator,
         PhpValidator $validator,
         $logger = null,
-        $authenticationService = null
+        $authenticationService = null,
+        ?SnippetSigner $signer = null
     ) {
         $this->repository = $repository;
         $this->safeMode = $safeMode;
@@ -70,6 +76,7 @@ class SnippetExecutor
         $this->validator = $validator;
         $this->logger = $logger;
         $this->authenticationService = $authenticationService;
+        $this->signer = $signer ?? new SnippetSigner();
     }
 
     /**
@@ -112,6 +119,11 @@ class SnippetExecutor
             return 0;
         }
 
+        if ($this->signer->state() === SnippetSigner::MISCONFIGURED) {
+            $this->logIntegrityError('CodeSnippets: signing configuration error; no snippets were run.');
+            return 0;
+        }
+
         try {
             $snippets = $this->repository->findActiveOrdered(SnippetScope::fromMvcEvent($event));
         } catch (\Throwable $throwable) {
@@ -125,6 +137,9 @@ class SnippetExecutor
             if (isset($this->executedIds[$id])) {
                 continue;
             }
+            if (!$this->verifyIntegrity($snippet)) {
+                continue;
+            }
             $this->executedIds[$id] = true;
             $invoked++;
             $this->executeOne($snippet, $services, $event);
@@ -136,6 +151,37 @@ class SnippetExecutor
     public function hasStarted(): bool
     {
         return $this->started;
+    }
+
+    private function verifyIntegrity(array $snippet): bool
+    {
+        try {
+            if ($this->signer->verify($snippet)) {
+                return true;
+            }
+        } catch (\Throwable $ignored) {
+            // A verifier failure must never reach the evaluator or disclose its exception.
+        }
+        $id = (int) $snippet['id'];
+        $message = 'Snippet integrity verification failed; execution skipped.'; // @translate
+        $this->logIntegrityError(sprintf('CodeSnippets: snippet #%d: %s', $id, $message));
+        try {
+            $this->repository->recordError($id, SnippetIntegrityException::class, $message, null);
+        } catch (\Throwable $ignored) {
+            $this->logIntegrityError(sprintf('CodeSnippets: could not record integrity failure for snippet #%d.', $id));
+        }
+        return false;
+    }
+
+    private function logIntegrityError(string $message): void
+    {
+        try {
+            if ($this->logger !== null && method_exists($this->logger, 'err')) {
+                $this->logger->err($message);
+            }
+        } catch (\Throwable $ignored) {
+            // Logging failure must not prevent checking later snippets.
+        }
     }
 
     /**

@@ -22,6 +22,7 @@ Manage PHP snippets from the Omeka S admin interface, without editing a theme or
 - Example snippets included, all inactive
 - Safe mode kill switches to recover from a snippet that breaks the site
 - Optional REST API at `/api/code_snippets`, reads only unless writes are enabled
+- Optional HMAC authentication of executable snippet state against direct database tampering
 
 Snippets run with the privileges of the Omeka S PHP process. Only `global_admin` may manage them by default; other roles can be allowed in the module configuration, with the consequences described in [who may manage snippets](#who-may-manage-snippets). Read the [security model](#security-model) before using this on a production site.
 
@@ -143,6 +144,142 @@ This module does **not** sandbox PHP. There is no function blacklist, regex filt
 
 See [SECURITY.md](SECURITY.md).
 
+## Optional database integrity signing
+
+CodeSnippets follows the conventional trust model used by snippet managers: trusted
+administrators may store PHP in the application database and the application executes it.
+For installations with stricter database-compromise threat models, CodeSnippets can
+optionally authenticate executable snippet state with HMAC-SHA256 using a secret stored
+outside the database. This hardened mode is **disabled by default**. It is defense in
+depth for deployments with unusually strict assurance requirements, not a PHP sandbox.
+
+Generate a secret locally:
+
+```sh
+php -r 'echo bin2hex(random_bytes(32)), PHP_EOL;'
+```
+
+The recommended secret is 32 random bytes represented as 64 hexadecimal characters.
+Merge this entry into Omeka S's existing `config/local.config.php` return array, replacing
+the placeholder with the generated secret:
+
+```php
+return [
+    'code_snippets' => [
+        'signing_key' => 'REPLACE-WITH-YOUR-GENERATED-64-CHARACTER-SECRET',
+    ],
+];
+```
+
+For containers and managed deployments, prefer secret injection through the environment:
+
+```php
+return [
+    'code_snippets' => [
+        'signing_key' => getenv('OMEKA_CODE_SNIPPETS_SIGNING_KEY') ?: null,
+    ],
+];
+```
+
+The key is never generated automatically, stored in `Omeka\Settings`, accepted by a web
+form, or included in REST output or exports. Protect the configuration and environment
+with the same care as other server secrets. Configuration caches, if used by your deployment,
+also contain secrets and must remain outside database and public access.
+
+An absent key, `null`, or the empty string selects standard mode: legacy unsigned active
+snippets continue to execute. A string of at least 32 bytes enables signing; the module
+uses its exact bytes without trimming or decoding. Other configured values and shorter
+strings are configuration errors: execution stops and a generic error is logged.
+Length validation cannot establish entropy; use the generation command above.
+
+**For a deployment that must remain hardened when secret injection fails**, use
+`'signing_key' => getenv('OMEKA_CODE_SNIPPETS_SIGNING_KEY') ?: false` instead.
+The boolean `false` deliberately selects the configuration-error state, blocking all
+snippets. The `null` example above intentionally makes the feature optional.
+
+### Protected state and trusted writes
+
+The signature binds `id`, `name`, `description`, `code`, `priority`, `active`, and
+`run_scope`, in that order, using canonical JSON types and a domain/version prefix.
+Stored signatures use `hmac-sha256:v1:<64 lowercase hex characters>`.
+Creation/modification timestamps and runtime diagnostic fields are excluded.
+
+Active creates, edits, and activations are signed through `SnippetService`, including
+admin forms, REST writes, imports, and the active Playground example. Content and
+signature are committed in one transaction. Inactive snippets remain unsigned;
+deactivation clears the signature in hardened mode. Directly setting `active = 1` in
+SQL cannot authorize an unsigned snippet. Copying a signature to a different ID fails.
+
+Before evaluation, the executor checks the loaded state with the external key. Missing,
+invalid, malformed, unsupported, or unverifiable signatures are skipped with a generic
+diagnostic identified by snippet ID. Later valid snippets still run. Execution never
+repairs or signs database contents. Safe mode continues to work independently.
+
+The module configuration page displays the signing state without displaying the key.
+The list and edit screens display integrity status. These are informational; execution
+verification remains authoritative. The existing REST write gate stays disabled by
+default. Signatures are installation-local metadata: exports omit them, imports ignore
+supplied signatures and sign active imported state with the destination key.
+
+### Enabling signing on an existing installation and recovery
+
+The schema upgrade only adds a nullable `signature` column. **It never signs existing
+rows.** Previously active unsigned snippets will stop executing when a key is configured.
+
+1. Back up the database and securely provision/back up the external secret separately.
+2. Upgrade the module and configure the key. Check the read-only configuration status.
+3. Review each existing snippet's complete content and execution metadata, including its
+   ID, name, scope, priority, and active state. Treat current database contents as untrusted
+   when investigating a compromise.
+4. Explicitly save the reviewed active snippet, or deactivate and reactivate it through
+   CodeSnippets. This trusts that state and creates its signature. Check for `Valid` status.
+5. Investigate unexpected integrity errors; restore reviewed source from a trusted backup
+   rather than blindly saving compromised contents. There is no bulk trust operation.
+
+For a configuration error, correct the external key; no active write can be signed until
+it is valid. Inactive saves and deactivation remain available. If otherwise valid PHP
+breaks the site, use [emergency safe mode](#emergency-global-safe-mode) to review or disable
+it. Do not remove the key as an integrity recovery shortcut: that restores standard mode.
+
+### Key rotation and backups
+
+Changing the key invalidates all existing signatures. Provision the new random secret,
+then review and re-save each active snippet to sign with the new key. Old signatures
+are blocked until then; there is no previous-key fallback or automatic re-signing.
+Emergency safe mode can keep execution disabled throughout this review.
+
+A database restored with the matching external key continues to validate unchanged signed
+rows. A restore on another server with a different key configured blocks those rows until
+review and re-signing. A missing secret must be a deployment error for hardened sites:
+use the fail-closed environment example above. **No configured key means standard mode**,
+even if the database contains signatures. Back up and manage the external secret separately
+so restoring the database does not accidentally disable protection.
+
+### Threat model and limitations
+
+Direct modification or insertion of `code_snippet` rows alone cannot forge new executable
+state without the external secret. This assumes **Omeka's authenticated administrative
+write path remains trusted**. An attacker who manipulates wider database state to create
+or impersonate an authorized administrator and then uses normal application writes is
+outside this feature's threat model. HMAC does not replace Omeka authentication or
+authorization, and legitimately authorized managers can intentionally sign arbitrary PHP.
+
+This mode does not protect against disclosure of the secret, filesystem writes, access to
+`config/local.config.php` or its environment, arbitrary PHP execution, shell/server access,
+or modification of module code. It does not stop row deletion, disabling snippets, database
+corruption, general database compromise, denial of service, or rollback/replay of older
+valid signed state when the attacker has both that state and its valid signature. Binding
+the ID prevents cross-ID copying, not replay of historical state for the same ID. Trusted
+PHP may itself act on untrusted database content; signing authenticates source, not what
+that source does. HMAC integrity is not a sandbox and does not make arbitrary PHP safe.
+
+The WordPress Code Snippets plugin inspired this module. In the upstream implementation
+reviewed on 2026-09-21 ([revision 602d900, snippet storage and execution](https://github.com/codesnippetspro/code-snippets/blob/602d9007461d11b556d42e12595a64409a6b553d/src/php/snippet-ops.php)),
+snippets are stored in the WordPress database and the reviewed PHP execution path does not
+appear to authenticate stored PHP with equivalent per-snippet HMAC signatures. This is a
+description of that reviewed implementation, not a security assessment or criticism.
+CodeSnippets' optional mode addresses a narrower, stricter database-integrity requirement.
+
 ## REST API
 
 Snippets are exposed on the Omeka S REST API as `code_snippets`.
@@ -178,7 +315,7 @@ A snippet is returned as:
 }
 ```
 
-Writes accept only `name`, `description`, `code`, `priority`, `active` and `run_scope`. Any other key in the request body is discarded, so `id` and the `last_error_*` diagnostics cannot be set by a client. Creating or activating a snippet runs the same syntax check as the admin form and answers `422` when it fails.
+Writes accept only `name`, `description`, `code`, `priority`, `active` and `run_scope`. Any other key in the request body is discarded, so `id`, `signature`, signing configuration, and the `last_error_*` diagnostics cannot be set by a client. Creating or activating a snippet runs the same syntax check as the admin form and answers `422` when it fails. Active writes are signed server-side when integrity signing is enabled; a signing failure also answers `422` without saving the change. Raw signatures are not returned by JSON-LD.
 
 ### Enabling writes
 
@@ -274,7 +411,7 @@ The portable interchange format is always a versioned envelope owned by the Code
 }
 ```
 
-Even a single-snippet export produces a versioned document with a one-element `snippets` array. Database-specific fields (such as numeric IDs, creation/modification timestamps, and runtime error tracking) are excluded so snippets remain portable across Omeka S environments.
+Even a single-snippet export produces a versioned document with a one-element `snippets` array. Database-specific fields (such as numeric IDs, signatures, creation/modification timestamps, and runtime error tracking) are excluded so snippets remain portable across Omeka S environments. Imported signatures are ignored; active imports receive new signatures from the destination's configured key.
 
 The portable schema contains:
 - `name`: string (required)
@@ -330,6 +467,9 @@ Each snippet runs in its own `try/catch (\Throwable $e)`. A recoverable error:
 - does not stop later snippets
 
 Successful runs do not write to the database.
+
+Integrity failures use a separate generic diagnostic containing only the snippet ID;
+unverified names, PHP bodies, signatures, keys, and underlying exception details are not logged.
 
 `catch (\Throwable $e)` cannot recover from every PHP failure, including:
 

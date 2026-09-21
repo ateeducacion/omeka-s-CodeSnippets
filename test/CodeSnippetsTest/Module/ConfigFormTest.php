@@ -15,6 +15,30 @@ use PHPUnit\Framework\TestCase;
  */
 class ConfigFormTest extends TestCase
 {
+    public function testIntegrityConfigurationIsReadOnlyAndNeverRevealsTheKey(): void
+    {
+        $states = [['', 'disabled'], ['short', 'configuration error'], [str_repeat('k', 32), 'enabled']];
+        foreach ($states as [$key, $state]) {
+            $settings = $this->settings();
+            $module = new Module();
+            $module->setServiceLocator(new ArrayServiceLocator([
+                'Omeka\Settings' => $settings,
+                'Config' => ['code_snippets' => ['signing_key' => $key]],
+            ]));
+            $html = $module->getConfigForm($this->renderer());
+            $this->assertStringContainsString('Database integrity signing: ' . $state, $html);
+            $this->assertStringNotContainsString('name="signing_key"', $html);
+            if ($key !== '') {
+                $this->assertStringNotContainsString($key, $html);
+            }
+            $module->handleConfigForm($this->controller(null, [
+                'signing_key' => 'posted-secret', 'code_snippets' => ['signing_key' => 'posted-secret'],
+            ]));
+            $this->assertArrayNotHasKey('signing_key', $settings->stored);
+            $this->assertArrayNotHasKey('code_snippets', $settings->stored);
+        }
+    }
+
     /**
      * @return object
      */

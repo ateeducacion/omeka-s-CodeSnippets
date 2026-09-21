@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace CodeSnippets\Service;
 
 use CodeSnippets\Exception\InvalidSyntaxException;
+use CodeSnippets\Exception\SnippetIntegrityException;
 use CodeSnippets\Exception\SnippetNotFoundException;
 
 /**
@@ -21,10 +22,17 @@ class SnippetService
     /** @var PhpValidator */
     private $validator;
 
-    public function __construct(SnippetRepositoryInterface $repository, PhpValidator $validator)
-    {
+    /** @var SnippetSigner */
+    private $signer;
+
+    public function __construct(
+        SnippetRepositoryInterface $repository,
+        PhpValidator $validator,
+        ?SnippetSigner $signer = null
+    ) {
         $this->repository = $repository;
         $this->validator = $validator;
+        $this->signer = $signer ?? new SnippetSigner();
     }
 
     /**
@@ -58,7 +66,9 @@ class SnippetService
             $this->assertValidSyntax($data['code']);
         }
         $data['code'] = $this->validator->normalize($data['code']);
-        return $this->repository->create($data);
+        return $this->repository->transactional(function () use ($data) {
+            return $this->signWrittenState($this->repository->create($data));
+        });
     }
 
     /**
@@ -87,14 +97,14 @@ class SnippetService
                 $data['code'] = $this->validator->normalize($data['code']);
             }
 
-            return $repository->update($id, $data);
+            // Persist the same complete state whose code was validated above.
+            $final = $wantsActive && $this->signer->state() !== SnippetSigner::DISABLED
+                ? array_replace($existing, $data)
+                : $data;
+            return $this->signWrittenState($repository->update($id, $final));
         };
 
-        if ($repository instanceof SnippetRepository) {
-            return $repository->transactional($apply);
-        }
-
-        return $apply();
+        return $repository->transactional($apply);
     }
 
     /**
@@ -102,9 +112,7 @@ class SnippetService
      */
     public function activate(int $id): array
     {
-        $snippet = $this->find($id);
-        $this->assertValidSyntax($snippet['code']);
-        return $this->repository->activate($id);
+        return $this->update($id, ['active' => true]);
     }
 
     /**
@@ -112,7 +120,38 @@ class SnippetService
      */
     public function deactivate(int $id): array
     {
-        return $this->repository->deactivate($id);
+        return $this->update($id, ['active' => false]);
+    }
+
+    private function signWrittenState(array $snippet): array
+    {
+        if ($this->signer->state() === SnippetSigner::DISABLED) {
+            return $snippet;
+        }
+        try {
+            $signature = $snippet['active'] ? $this->signer->sign($snippet) : null;
+            return $this->repository->setSignature((int) $snippet['id'], $signature);
+        } catch (\Throwable $ignored) {
+            throw new SnippetIntegrityException('Snippet integrity signing failed.');
+        }
+    }
+
+    /** Read-only presentation status; execution always verifies independently. */
+    public function integrityStatus(array $snippet): string
+    {
+        if ($this->signer->state() === SnippetSigner::DISABLED) {
+            return 'Signing disabled'; // @translate
+        }
+        if ($this->signer->state() === SnippetSigner::MISCONFIGURED) {
+            return 'Signing configuration error'; // @translate
+        }
+        if (empty($snippet['signature'])) {
+            return 'Unsigned'; // @translate
+        }
+        if ($this->signer->verify($snippet)) {
+            return 'Valid'; // @translate
+        }
+        return 'Invalid'; // @translate
     }
 
     public function delete(int $id): void

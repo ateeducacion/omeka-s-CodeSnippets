@@ -50,6 +50,9 @@ interface SnippetRepositoryInterface
      */
     public function deactivate(int $id): array;
 
+    /** Internal trust metadata; never part of user-writable data. */
+    public function setSignature(int $id, ?string $signature): array;
+
     public function recordError(int $id, string $type, string $message, ?int $line): void;
 
     /**

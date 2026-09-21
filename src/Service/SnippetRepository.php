@@ -155,6 +155,13 @@ class SnippetRepository implements SnippetRepositoryInterface
         ], ['id' => $id]);
     }
 
+    public function setSignature(int $id, ?string $signature): array
+    {
+        $this->require($id);
+        $this->connection->update(Schema::TABLE, ['signature' => $signature], ['id' => $id]);
+        return $this->require($id);
+    }
+
     /**
      * @param callable $callback
      * @return mixed
@@ -209,7 +216,8 @@ class SnippetRepository implements SnippetRepositoryInterface
             'code' => (string) ($row['code'] ?? ''),
             'priority' => (int) ($row['priority'] ?? self::DEFAULT_PRIORITY),
             'active' => (bool) ($row['active'] ?? true),
-            'run_scope' => SnippetScope::normalize($row['run_scope'] ?? SnippetScope::DEFAULT),
+            'signature' => $row['signature'] ?? null,
+            'run_scope' => (string) ($row['run_scope'] ?? SnippetScope::DEFAULT),
             'created' => (string) ($row['created'] ?? ''),
             'modified' => (string) ($row['modified'] ?? ''),
             'last_error_type' => $errorType !== null ? (string) $errorType : null,

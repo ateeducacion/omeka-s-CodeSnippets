@@ -8,6 +8,9 @@ use Laminas\Router\Http\Literal;
 use Laminas\Router\Http\Segment;
 
 return [
+    'code_snippets' => [
+        'signing_key' => null,
+    ],
     'view_manager' => [
         'template_path_stack' => [
             dirname(__DIR__) . '/view',
@@ -20,6 +23,7 @@ return [
             Service\SnippetEvaluator::class => Service\SnippetEvaluator::class,
         ],
         'factories' => [
+            Service\SnippetSigner::class => Service\Factory\SnippetSignerFactory::class,
             Service\SnippetRepository::class => Service\Factory\SnippetRepositoryFactory::class,
             Service\SnippetService::class => Service\Factory\SnippetServiceFactory::class,
             Service\SnippetExecutor::class => Service\Factory\SnippetExecutorFactory::class,
