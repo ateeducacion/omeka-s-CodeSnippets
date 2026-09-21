@@ -31,6 +31,12 @@ $this->headScript()->appendFile($this->assetUrl('js/code-snippets-editor.js', 'C
 </div>
 
 <?php if ($snippet): ?>
+<p><?php echo $escape($translate('Integrity')); ?>:
+    <?php echo $escape($translate($integrityStatus)); ?>
+</p>
+<?php if ($snippet['active'] && in_array($integrityStatus, ['Unsigned', 'Invalid'], true)): ?>
+<p class="warning"><?php echo $escape($translate('Existing snippets must be reviewed and saved again before they can execute.')); ?></p>
+<?php endif; ?>
 <p>
     <strong><?php echo $escape($translate('Status')); ?>:</strong>
     <?php if (!empty($snippet['active'])): ?>
@@ -46,7 +52,7 @@ $this->headScript()->appendFile($this->assetUrl('js/code-snippets-editor.js', 'C
         <dt><?php echo $escape($translate('Error type')); ?></dt>
         <dd><?php echo $escape((string) $snippet['last_error_type']); ?></dd>
         <dt><?php echo $escape($translate('Message')); ?></dt>
-        <dd><?php echo $escape((string) $snippet['last_error_message']); ?></dd>
+        <dd><?php echo $escape($translate((string) $snippet['last_error_message'])); ?></dd>
         <?php if ($snippet['last_error_line'] !== null): ?>
         <dt><?php echo $escape($translate('Line')); ?></dt>
         <dd><?php echo $escape((string) $snippet['last_error_line']); ?></dd>

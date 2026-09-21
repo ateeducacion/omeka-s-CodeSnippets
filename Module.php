@@ -10,6 +10,10 @@ use CodeSnippets\Db\Schema;
 use CodeSnippets\Permissions\AllowedUserAssertion;
 use CodeSnippets\Install\ExampleSnippets;
 use CodeSnippets\Service\SnippetExecutor;
+use CodeSnippets\Service\PhpValidator;
+use CodeSnippets\Service\SnippetRepository;
+use CodeSnippets\Service\SnippetService;
+use CodeSnippets\Service\SnippetSigner;
 use Laminas\Mvc\MvcEvent;
 use Laminas\ServiceManager\ServiceLocatorInterface;
 use Omeka\Module\AbstractModule;
@@ -269,7 +273,41 @@ class Module extends AbstractModule
             . '<p>' . $escape($translate($reads)) . '</p>'
             . '</div></div>'
             . $this->rolesField($renderer, $settings)
-            . $this->usersField($renderer, $settings);
+            . $this->usersField($renderer, $settings)
+            . $this->integrityField($renderer);
+    }
+
+    private function integrityField($renderer): string
+    {
+        $translate = $renderer->plugin('translate');
+        $escape = $renderer->plugin('escapeHtml');
+        $state = $this->installationSigner($this->getServiceLocator())->state();
+        if ($state === SnippetSigner::ENABLED) {
+            $heading = 'Database integrity signing: enabled'; // @translate
+            $help = 'Unsigned or modified active snippets are blocked before execution.'; // @translate
+            $review = 'Existing snippets must be reviewed and saved again before they can execute.'; // @translate
+        } elseif ($state === SnippetSigner::MISCONFIGURED) {
+            $heading = 'Database integrity signing: configuration error'; // @translate
+            $help = 'Snippets will not execute until the signing key configuration is corrected.'; // @translate
+            $review = '';
+        } else {
+            $heading = 'Database integrity signing: disabled'; // @translate
+            $help = 'Optional. Configure code_snippets.signing_key in config/local.config.php.'; // @translate
+            $review = '';
+        }
+        return '<div class="field"><div class="field-meta">' . $escape($translate($heading))
+            . '</div><div class="inputs"><p>' . $escape($translate($help)) . '</p>'
+            . ($review !== '' ? '<p>' . $escape($translate($review)) . '</p>' : '') . '</div></div>';
+    }
+
+    /** Resolve external configuration even before module services are registered at install time. */
+    private function installationSigner($services): SnippetSigner
+    {
+        try {
+            return SnippetSigner::fromConfig($services->has('Config') ? $services->get('Config') : []);
+        } catch (\Throwable $ignored) {
+            return new SnippetSigner(false);
+        }
     }
 
     /**
@@ -447,7 +485,11 @@ class Module extends AbstractModule
         $this->loadInstallClasses();
         $connection = $serviceLocator->get('Omeka\Connection');
         $connection->exec(Schema::createTableSql());
-        ExampleSnippets::seed($connection);
+        ExampleSnippets::seed($connection, new SnippetService(
+            new SnippetRepository($connection),
+            new PhpValidator(),
+            $this->installationSigner($serviceLocator)
+        ));
     }
 
     public function upgrade($oldVersion, $newVersion, ServiceLocatorInterface $serviceLocator): void
@@ -456,6 +498,9 @@ class Module extends AbstractModule
         $connection = $serviceLocator->get('Omeka\Connection');
         if (!$this->hasColumn($connection, 'run_scope')) {
             $connection->exec(Schema::addRunScopeColumnSql());
+        }
+        if (!$this->hasColumn($connection, 'signature')) {
+            $connection->exec(Schema::addSignatureColumnSql());
         }
     }
 
@@ -491,6 +536,20 @@ class Module extends AbstractModule
     private function loadInstallClasses(): void
     {
         $this->loadSchemaClass();
+        foreach ([
+            'Exception/SnippetIntegrityException',
+            'Exception/SnippetNotFoundException',
+            'Exception/InvalidSyntaxException',
+            'Service/SnippetRepositoryInterface',
+            'Service/SnippetRepository',
+            'Service/ValidationResult',
+            'Service/PhpValidator',
+            'Service/SnippetScope',
+            'Service/SnippetSigner',
+            'Service/SnippetService',
+        ] as $path) {
+            require_once __DIR__ . '/src/' . $path . '.php';
+        }
         if (!class_exists(ExampleSnippets::class, false)) {
             require_once __DIR__ . '/src/Install/ExampleSnippets.php';
         }

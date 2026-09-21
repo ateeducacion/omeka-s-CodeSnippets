@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace CodeSnippets\Install;
 
 use CodeSnippets\Db\Schema;
+use CodeSnippets\Service\SnippetService;
 
 /**
  * Example snippets inserted on install.
@@ -25,10 +26,14 @@ class ExampleSnippets
     /**
      * @param object $connection Doctrine\DBAL\Connection or compatible test double
      */
-    public static function seed($connection): void
+    public static function seed($connection, SnippetService $service): void
     {
         $now = gmdate('Y-m-d H:i:s');
         foreach (self::definitions() as $snippet) {
+            if (!empty($snippet['active'])) {
+                $service->create($snippet);
+                continue;
+            }
             $connection->insert(Schema::TABLE, [
                 'name' => $snippet['name'],
                 'description' => $snippet['description'],

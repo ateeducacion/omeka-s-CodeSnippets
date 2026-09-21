@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CodeSnippets\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-18 18:28+0100\n"
-"PO-Revision-Date: 2026-09-18 13:05+0100\n"
+"POT-Creation-Date: 2026-09-21 10:36+0100\n"
+"PO-Revision-Date: 2026-09-21 10:36+0100\n"
 "Last-Translator: Área de Tecnología Educativa\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -23,7 +23,7 @@ msgid "Safe mode is active. PHP snippets are not being executed."
 msgstr "El modo seguro está activo. No se están ejecutando fragmentos PHP."
 
 #: view/code-snippets/admin/snippet/delete.phtml:32
-#: view/code-snippets/admin/snippet/form.phtml:73
+#: view/code-snippets/admin/snippet/form.phtml:79
 msgid "Cancel"
 msgstr "Cancelar"
 
@@ -54,68 +54,73 @@ msgid "Name"
 msgstr "Nombre"
 
 #: view/code-snippets/admin/snippet/index.phtml:44
-#: view/code-snippets/admin/snippet/form.phtml:35
+#: view/code-snippets/admin/snippet/form.phtml:41
 msgid "Status"
 msgstr "Estado"
 
 #: view/code-snippets/admin/snippet/index.phtml:45
+#: view/code-snippets/admin/snippet/form.phtml:34
+msgid "Integrity"
+msgstr "Integridad"
+
+#: view/code-snippets/admin/snippet/index.phtml:46
 msgid "Run snippet"
 msgstr "Ejecutar fragmento"
 
-#: view/code-snippets/admin/snippet/index.phtml:46
+#: view/code-snippets/admin/snippet/index.phtml:47
 msgid "Priority"
 msgstr "Prioridad"
 
-#: view/code-snippets/admin/snippet/index.phtml:47
+#: view/code-snippets/admin/snippet/index.phtml:48
 msgid "Modified"
 msgstr "Modificado"
 
-#: view/code-snippets/admin/snippet/index.phtml:48
+#: view/code-snippets/admin/snippet/index.phtml:49
 msgid "Last error"
 msgstr "Último error"
 
-#: view/code-snippets/admin/snippet/index.phtml:49
+#: view/code-snippets/admin/snippet/index.phtml:50
 msgid "Actions"
 msgstr "Acciones"
 
-#: view/code-snippets/admin/snippet/index.phtml:65
-#: view/code-snippets/admin/snippet/form.phtml:37
+#: view/code-snippets/admin/snippet/index.phtml:66
+#: view/code-snippets/admin/snippet/form.phtml:43
 msgid "Active"
 msgstr "Activo"
 
-#: view/code-snippets/admin/snippet/index.phtml:67
-#: view/code-snippets/admin/snippet/form.phtml:39
+#: view/code-snippets/admin/snippet/index.phtml:68
+#: view/code-snippets/admin/snippet/form.phtml:45
 msgid "Inactive"
 msgstr "Inactivo"
 
-#: view/code-snippets/admin/snippet/index.phtml:70
+#: view/code-snippets/admin/snippet/index.phtml:71
 msgid "Error"
 msgstr "Error"
 
-#: view/code-snippets/admin/snippet/index.phtml:94
+#: view/code-snippets/admin/snippet/index.phtml:97
 msgid "None"
 msgstr "Ninguno"
 
-#: view/code-snippets/admin/snippet/index.phtml:102
-#: view/code-snippets/admin/snippet/form.phtml:85
+#: view/code-snippets/admin/snippet/index.phtml:105
+#: view/code-snippets/admin/snippet/form.phtml:91
 msgid "Deactivate"
 msgstr "Desactivar"
 
-#: view/code-snippets/admin/snippet/index.phtml:107
+#: view/code-snippets/admin/snippet/index.phtml:110
 msgid "Activate"
 msgstr "Activar"
 
-#: view/code-snippets/admin/snippet/index.phtml:113
+#: view/code-snippets/admin/snippet/index.phtml:116
 msgid "Edit"
 msgstr "Editar"
 
-#: view/code-snippets/admin/snippet/index.phtml:122
-#: view/code-snippets/admin/snippet/form.phtml:70
+#: view/code-snippets/admin/snippet/index.phtml:125
+#: view/code-snippets/admin/snippet/form.phtml:76
 msgid "Delete"
 msgstr "Eliminar"
 
-#: view/code-snippets/admin/snippet/index.phtml:135
-#: view/code-snippets/admin/snippet/form.phtml:93
+#: view/code-snippets/admin/snippet/index.phtml:138
+#: view/code-snippets/admin/snippet/form.phtml:99
 msgid "Close"
 msgstr "Cerrar"
 
@@ -133,31 +138,36 @@ msgstr ""
 "S. Solo administradores globales de confianza deberían poder gestionar "
 "fragmentos."
 
-#: view/code-snippets/admin/snippet/form.phtml:44
+#: view/code-snippets/admin/snippet/form.phtml:38
+msgid ""
+"Existing snippets must be reviewed and saved again before they can execute."
+msgstr "Los fragmentos existentes deben revisarse y guardarse de nuevo antes de poder ejecutarse."
+
+#: view/code-snippets/admin/snippet/form.phtml:50
 msgid "Last runtime error"
 msgstr "Último error de ejecución"
 
-#: view/code-snippets/admin/snippet/form.phtml:46
+#: view/code-snippets/admin/snippet/form.phtml:52
 msgid "Error type"
 msgstr "Tipo de error"
 
-#: view/code-snippets/admin/snippet/form.phtml:48
+#: view/code-snippets/admin/snippet/form.phtml:54
 msgid "Message"
 msgstr "Mensaje"
 
-#: view/code-snippets/admin/snippet/form.phtml:51
+#: view/code-snippets/admin/snippet/form.phtml:57
 msgid "Line"
 msgstr "Línea"
 
-#: view/code-snippets/admin/snippet/form.phtml:54
+#: view/code-snippets/admin/snippet/form.phtml:60
 msgid "Date/time"
 msgstr "Fecha/hora"
 
-#: view/code-snippets/admin/snippet/form.phtml:67
+#: view/code-snippets/admin/snippet/form.phtml:73
 msgid "Save"
 msgstr "Guardar"
 
-#: view/code-snippets/admin/snippet/form.phtml:68
+#: view/code-snippets/admin/snippet/form.phtml:74
 msgid "Save and activate"
 msgstr "Guardar y activar"
 
@@ -174,26 +184,26 @@ msgstr ""
 msgid "Confirm delete"
 msgstr "Confirmar eliminación"
 
-#: src/Controller/Admin/SnippetController.php:261
+#: src/Controller/Admin/SnippetController.php:276
 msgid "You are not allowed to manage code snippets."
 msgstr "No tiene permiso para gestionar fragmentos de código."
 
-#: src/Controller/Admin/SnippetController.php:299
+#: src/Controller/Admin/SnippetController.php:314
 msgid "Method not allowed."
 msgstr "Método no permitido."
 
-#: Module.php:254
+#: Module.php:258
 msgid "Allow snippet writes over the REST API"
 msgstr "Permitir la escritura de fragmentos a través de la API REST"
 
-#: Module.php:255
+#: Module.php:259
 msgid ""
 "Disabled by default. An API key could then create and change snippet PHP."
 msgstr ""
 "Desactivado por omisión. Una clave de API podría entonces crear y modificar "
 "el PHP de los fragmentos."
 
-#: Module.php:256
+#: Module.php:260
 msgid ""
 "Omeka sends API credentials in the query string, where server logs record "
 "them."
@@ -201,17 +211,43 @@ msgstr ""
 "Omeka envía las credenciales de la API en la cadena de consulta, donde "
 "quedan registradas en los registros del servidor."
 
-#: Module.php:257
+#: Module.php:261
 msgid "Reading snippets over the API is not affected by this setting."
 msgstr ""
 "La lectura de fragmentos a través de la API no se ve afectada por este "
 "ajuste."
 
+#: Module.php:286
+msgid "Database integrity signing: enabled"
+msgstr "Firma de integridad de la base de datos: activada"
+
+#: Module.php:287
+msgid "Unsigned or modified active snippets are blocked before execution."
+msgstr "Los fragmentos activos sin firmar o modificados se bloquean antes de ejecutarse."
+
 #: Module.php:290
+msgid "Database integrity signing: configuration error"
+msgstr "Firma de integridad de la base de datos: error de configuración"
+
+#: Module.php:291
+msgid ""
+"Snippets will not execute until the signing key configuration is corrected."
+msgstr "Los fragmentos no se ejecutarán hasta que se corrija la configuración de la clave de firma."
+
+#: Module.php:294
+msgid "Database integrity signing: disabled"
+msgstr "Firma de integridad de la base de datos: desactivada"
+
+#: Module.php:295
+msgid ""
+"Optional. Configure code_snippets.signing_key in config/local.config.php."
+msgstr "Opcional. Configure code_snippets.signing_key en config/local.config.php."
+
+#: Module.php:328
 msgid "Individual users who may manage snippets"
 msgstr "Usuarios concretos que pueden gestionar fragmentos"
 
-#: Module.php:291
+#: Module.php:329
 msgid ""
 "Comma separated user ids. A user id appears in the URL of that user's admin "
 "page."
@@ -219,29 +255,29 @@ msgstr ""
 "Identificadores de usuario separados por comas. El identificador aparece en "
 "la URL de la página de administración de ese usuario."
 
-#: Module.php:292
+#: Module.php:330
 msgid "The same warning applies: these users can run PHP as the web process."
 msgstr ""
 "Se aplica la misma advertencia: estos usuarios pueden ejecutar PHP como el "
 "proceso web."
 
-#: Module.php:293
+#: Module.php:331
 msgid "no such user"
 msgstr "no existe ese usuario"
 
-#: Module.php:374
+#: Module.php:412
 msgid "Additional roles that may manage snippets"
 msgstr "Perfiles adicionales que pueden gestionar fragmentos"
 
-#: Module.php:375
+#: Module.php:413
 msgid "A role listed here can create and edit PHP that Omeka executes."
 msgstr "Un perfil incluido aquí puede crear y editar PHP que Omeka ejecuta."
 
-#: Module.php:376
+#: Module.php:414
 msgid "That is equivalent to granting global administrator."
 msgstr "Equivale a conceder el perfil de administrador global."
 
-#: Module.php:377
+#: Module.php:415
 msgid "Only add roles held by people you would already trust with the server."
 msgstr "Añada solo perfiles de personas a las que ya confiaría el servidor."
 
@@ -284,38 +320,42 @@ msgstr ""
 msgid "Execute this snippet on HTTP requests."
 msgstr "Ejecutar este fragmento en las peticiones HTTP."
 
-#: src/Controller/Admin/SnippetController.php:69
+#: src/Controller/Admin/SnippetController.php:76
 msgid "Snippet created."
 msgstr "Fragmento creado."
 
-#: src/Controller/Admin/SnippetController.php:120
+#: src/Controller/Admin/SnippetController.php:129
 msgid "Snippet updated."
 msgstr "Fragmento actualizado."
 
-#: src/Controller/Admin/SnippetController.php:157
+#: src/Controller/Admin/SnippetController.php:169
 msgid "Snippet activated."
 msgstr "Fragmento activado."
 
-#: src/Controller/Admin/SnippetController.php:184
+#: src/Controller/Admin/SnippetController.php:199
 msgid "Snippet deactivated."
 msgstr "Fragmento desactivado."
 
-#: src/Controller/Admin/SnippetController.php:209
+#: src/Controller/Admin/SnippetController.php:224
 msgid "Snippet deleted."
 msgstr "Fragmento eliminado."
 
-#: src/Controller/Admin/SnippetController.php:290
+#: src/Controller/Admin/SnippetController.php:305
 msgid "The requested snippet was not found."
 msgstr "No se ha encontrado el fragmento solicitado."
 
-#: src/Controller/Admin/SnippetController.php:305
+#: src/Controller/Admin/SnippetController.php:320
 msgid "Invalid CSRF token."
 msgstr "Token CSRF no válido."
 
-#: src/Controller/Admin/SnippetController.php:314
+#: src/Controller/Admin/SnippetController.php:329
 #, php-format
 msgid "The snippet contains invalid PHP syntax: %s"
 msgstr "El fragmento contiene sintaxis PHP no válida: %s"
+
+#: src/Controller/Admin/SnippetController.php:336
+msgid "Snippet signing failed. Check the external signing configuration."
+msgstr "No se ha podido firmar el fragmento. Compruebe la configuración externa de firma."
 
 #: src/Service/SnippetScope.php:39
 msgid "Run snippet everywhere"
@@ -340,6 +380,30 @@ msgstr "Área de administración"
 #: src/Service/SnippetScope.php:53
 msgid "Site front-end"
 msgstr "Parte pública del sitio"
+
+#: src/Service/SnippetService.php:143
+msgid "Signing disabled"
+msgstr "Firma desactivada"
+
+#: src/Service/SnippetService.php:146
+msgid "Signing configuration error"
+msgstr "Error de configuración de firma"
+
+#: src/Service/SnippetService.php:149
+msgid "Unsigned"
+msgstr "Sin firmar"
+
+#: src/Service/SnippetService.php:152
+msgid "Valid"
+msgstr "Válida"
+
+#: src/Service/SnippetService.php:154
+msgid "Invalid"
+msgstr "No válida"
+
+#: src/Service/SnippetExecutor.php:166
+msgid "Snippet integrity verification failed; execution skipped."
+msgstr "La verificación de integridad del fragmento ha fallado; se ha omitido su ejecución."
 
 #~ msgid "Are you sure you want to delete this snippet?"
 #~ msgstr "¿Seguro que desea eliminar este fragmento?"

@@ -12,6 +12,38 @@ use PHPUnit\Framework\TestCase;
 
 class LifecycleTest extends TestCase
 {
+    public function testSignatureUpgradeIsIdempotentAndLeavesOldRowsUnsigned(): void
+    {
+        $pdo = new \PDO('sqlite::memory:');
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $pdo->exec(str_replace('signature VARCHAR(96) DEFAULT NULL,', '', Schema::createTableSqliteSql()));
+        $connection = new class ($pdo) extends \CodeSnippetsTest\Support\PdoConnection {
+            public function getSchemaManager()
+            {
+                return $this;
+            }
+
+            public function listTableColumns($table): array
+            {
+                $columns = [];
+                foreach ($this->fetchAllAssociative('PRAGMA table_info(code_snippet)') as $row) {
+                    $columns[$row['name']] = $row;
+                }
+                return $columns;
+            }
+        };
+        $repository = new \CodeSnippets\Service\SnippetRepository($connection);
+        $row = $repository->create(['name' => 'Legacy', 'code' => '$x = 1;', 'active' => true]);
+        $services = new \CodeSnippetsTest\Support\ArrayServiceLocator(['Omeka\Connection' => $connection]);
+        $module = new Module();
+        $module->upgrade('0.0.0', '0.1.0', $services);
+        $module->upgrade('0.0.0', '0.1.0', $services);
+        $this->assertArrayHasKey('signature', $connection->listTableColumns('code_snippet'));
+        $this->assertNull($repository->find($row['id'])['signature']);
+        $this->assertTrue($repository->find($row['id'])['active']);
+        $this->assertStringContainsString('`signature` VARCHAR(96) DEFAULT NULL', Schema::createTableSql());
+    }
+
     public function testExecutionListensOnRouteAfterCoreListeners(): void
     {
         $this->assertSame('route', SnippetExecutor::EVENT_NAME);
@@ -117,10 +149,11 @@ class LifecycleTest extends TestCase
         $module->upgrade('0.0.0', '0.1.0', $locator);
         $module->uninstall($locator);
 
-        $this->assertCount(3, $connection->sql);
+        $this->assertCount(4, $connection->sql);
         $this->assertStringContainsString('CREATE TABLE', $connection->sql[0]);
         $this->assertStringContainsString('run_scope', $connection->sql[1]);
-        $this->assertStringContainsString('DROP TABLE', $connection->sql[2]);
+        $this->assertStringContainsString('signature', $connection->sql[2]);
+        $this->assertStringContainsString('DROP TABLE', $connection->sql[3]);
         $this->assertNotEmpty($connection->inserted, 'install seeds the example snippets');
     }
 
@@ -218,12 +251,12 @@ class LifecycleTest extends TestCase
         $module = new Module();
 
         $module->upgrade('0.0.0', '0.1.0', $locator);
-        $this->assertCount(1, $connection->sql);
+        $this->assertCount(2, $connection->sql);
         $this->assertStringContainsString('run_scope', $connection->sql[0]);
 
-        $connection->columns = ['run_scope' => new \stdClass()];
+        $connection->columns = ['run_scope' => new \stdClass(), 'signature' => new \stdClass()];
         $module->upgrade('0.0.0', '0.1.0', $locator);
-        $this->assertCount(1, $connection->sql);
+        $this->assertCount(2, $connection->sql);
     }
 
     public function testApiAdapterIsRegisteredForTheApiResourceName(): void

@@ -24,6 +24,38 @@ use PHPUnit\Framework\TestCase;
 
 class ExampleSnippetsTest extends TestCase
 {
+    /**
+     * @runInSeparateProcess
+     * @preserveGlobalState disabled
+     */
+    public function testPlaygroundInstallWithExternalKeySignsTheActiveExample(): void
+    {
+        define('CODE_SNIPPETS_PLAYGROUND', true);
+        $pdo = new PDO('sqlite::memory:');
+        $connection = new class ($pdo) extends PdoConnection {
+            public function exec(string $sql): void
+            {
+                parent::exec(strpos($sql, 'CREATE TABLE') === 0 ? Schema::createTableSqliteSql() : $sql);
+            }
+        };
+        $key = str_repeat('p', 32);
+        $services = new ArrayServiceLocator([
+            'Omeka\Connection' => $connection,
+            'Config' => ['code_snippets' => ['signing_key' => $key]],
+        ]);
+        (new Module())->install($services);
+        $repository = new SnippetRepository($connection);
+        $active = $repository->findActiveOrdered();
+        $this->assertCount(1, $active);
+        $signer = new \CodeSnippets\Service\SnippetSigner($key);
+        $this->assertTrue($signer->verify($active[0]));
+        foreach ($repository->findAll() as $row) {
+            if (!$row['active']) {
+                $this->assertNull($row['signature']);
+            }
+        }
+    }
+
     public function testInstallSeedsInactiveWordpressStyleExamples(): void
     {
         $connection = new RecordingConnection();
@@ -70,7 +102,10 @@ class ExampleSnippetsTest extends TestCase
     public function testActivatingTheYearExampleAfterInstallAppendsTheYear(): void
     {
         $connection = $this->sqliteConnection();
-        ExampleSnippets::seed($connection);
+        ExampleSnippets::seed($connection, new \CodeSnippets\Service\SnippetService(
+            new SnippetRepository($connection),
+            new PhpValidator()
+        ));
 
         $repository = new SnippetRepository($connection);
         $this->assertCount(0, $repository->findActiveOrdered());
@@ -113,7 +148,10 @@ class ExampleSnippetsTest extends TestCase
         define('CODE_SNIPPETS_PLAYGROUND', true);
 
         $connection = $this->sqliteConnection();
-        ExampleSnippets::seed($connection);
+        ExampleSnippets::seed($connection, new \CodeSnippets\Service\SnippetService(
+            new SnippetRepository($connection),
+            new PhpValidator()
+        ));
 
         $repository = new SnippetRepository($connection);
         $active = $repository->findActiveOrdered();

@@ -42,6 +42,7 @@ $this->htmlElement('body')->appendAttribute('class', 'code-snippets browse');
         <tr>
             <th><?php echo $escape($translate('Name')); ?></th>
             <th><?php echo $escape($translate('Status')); ?></th>
+            <th><?php echo $escape($translate('Integrity')); ?></th>
             <th><?php echo $escape($translate('Run snippet')); ?></th>
             <th><?php echo $escape($translate('Priority')); ?></th>
             <th><?php echo $escape($translate('Modified')); ?></th>
@@ -70,6 +71,7 @@ $this->htmlElement('body')->appendAttribute('class', 'code-snippets browse');
                     <span class="code-snippets-status is-error"><?php echo $escape($translate('Error')); ?></span>
                 <?php endif; ?>
             </td>
+            <td><?php echo $escape($translate($integrityStatuses[$id])); ?></td>
             <td><?php
                 $scopeLabels = \CodeSnippets\Service\SnippetScope::shortLabels();
                 $scope = \CodeSnippets\Service\SnippetScope::normalize($snippet['run_scope'] ?? null);
@@ -82,12 +84,13 @@ $this->htmlElement('body')->appendAttribute('class', 'code-snippets browse');
                     <?php
                     $type = (string) $snippet['last_error_type'];
                     $shortType = $type !== '' ? basename(str_replace('\\', '/', $type)) : '';
-                    $summary = trim($shortType . ': ' . (string) $snippet['last_error_message']);
+                    $errorMessage = $translate((string) $snippet['last_error_message']);
+                    $summary = trim($shortType . ': ' . $errorMessage);
                     if (strlen($summary) > 120) {
                         $summary = substr($summary, 0, 117) . '...';
                     }
                     ?>
-                    <span class="code-snippets-error-summary" title="<?php echo $escapeAttr((string) $snippet['last_error_message']); ?>">
+                    <span class="code-snippets-error-summary" title="<?php echo $escapeAttr($errorMessage); ?>">
                         <?php echo $escape($summary); ?>
                     </span>
                 <?php else: ?>

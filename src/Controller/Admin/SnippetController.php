@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace CodeSnippets\Controller\Admin;
 
 use CodeSnippets\Exception\InvalidSyntaxException;
+use CodeSnippets\Exception\SnippetIntegrityException;
 use CodeSnippets\Exception\SnippetNotFoundException;
 use CodeSnippets\Form\SnippetForm;
 use CodeSnippets\Service\ActionCsrf;
@@ -42,8 +43,14 @@ class SnippetController extends AbstractActionController
     public function indexAction()
     {
         $this->assertAllowed('index');
+        $snippets = $this->snippetService->findAll();
+        $integrityStatuses = [];
+        foreach ($snippets as $snippet) {
+            $integrityStatuses[$snippet['id']] = $this->snippetService->integrityStatus($snippet);
+        }
         $view = new ViewModel([
-            'snippets' => $this->snippetService->findAll(),
+            'snippets' => $snippets,
+            'integrityStatuses' => $integrityStatuses,
             'safeModeActive' => $this->isUrlSafeMode(),
             'emergencySafeMode' => $this->safeMode->isEmergencySafeMode(),
             'safeModeQuery' => $this->safeModeQuery(),
@@ -70,6 +77,8 @@ class SnippetController extends AbstractActionController
                     return $this->redirectToEdit((int) $snippet['id']);
                 } catch (InvalidSyntaxException $exception) {
                     $this->addSyntaxError($exception);
+                } catch (SnippetIntegrityException $exception) {
+                    $this->addIntegrityError();
                 } catch (\InvalidArgumentException $exception) {
                     $this->messenger()->addError($exception->getMessage());
                 }
@@ -121,6 +130,8 @@ class SnippetController extends AbstractActionController
                     return $this->redirectToEdit((int) $snippet['id']);
                 } catch (InvalidSyntaxException $exception) {
                     $this->addSyntaxError($exception);
+                } catch (SnippetIntegrityException $exception) {
+                    $this->addIntegrityError();
                 } catch (\InvalidArgumentException $exception) {
                     $this->messenger()->addError($exception->getMessage());
                 }
@@ -132,6 +143,7 @@ class SnippetController extends AbstractActionController
         return new ViewModel([
             'form' => $form,
             'snippet' => $snippet,
+            'integrityStatus' => $this->snippetService->integrityStatus($snippet),
             'safeModeActive' => $this->isUrlSafeMode(),
             'safeModeQuery' => $this->safeModeQuery(),
             'actionCsrf' => $this->actionCsrf->getToken(),
@@ -159,6 +171,9 @@ class SnippetController extends AbstractActionController
             return $this->notFound();
         } catch (InvalidSyntaxException $exception) {
             $this->addSyntaxError($exception);
+            return $this->redirectToEdit($id);
+        } catch (SnippetIntegrityException $exception) {
+            $this->addIntegrityError();
             return $this->redirectToEdit($id);
         }
 
@@ -314,6 +329,11 @@ class SnippetController extends AbstractActionController
             'The snippet contains invalid PHP syntax: %s', // @translate
             $exception->getMessage()
         ));
+    }
+
+    private function addIntegrityError(): void
+    {
+        $this->messenger()->addError('Snippet signing failed. Check the external signing configuration.'); // @translate
     }
 
     private function redirectToIndex()

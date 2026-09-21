@@ -71,6 +71,7 @@ class InMemorySnippetRepository implements SnippetRepositoryInterface
             'code' => (string) $data['code'],
             'priority' => isset($data['priority']) ? (int) $data['priority'] : SnippetRepository::DEFAULT_PRIORITY,
             'active' => !empty($data['active']),
+            'signature' => null,
             'run_scope' => SnippetScope::normalize($data['run_scope'] ?? SnippetScope::DEFAULT),
             'created' => $now,
             'modified' => $now,
@@ -126,6 +127,13 @@ class InMemorySnippetRepository implements SnippetRepositoryInterface
         $existing['last_error_line'] = $line;
         $existing['last_error_at'] = gmdate('Y-m-d H:i:s');
         $this->snippets[$id] = $existing;
+    }
+
+    public function setSignature(int $id, ?string $signature): array
+    {
+        $this->require($id);
+        $this->snippets[$id]['signature'] = $signature;
+        return $this->snippets[$id];
     }
 
     /**

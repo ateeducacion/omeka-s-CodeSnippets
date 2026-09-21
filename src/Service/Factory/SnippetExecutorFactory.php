@@ -9,6 +9,7 @@ use CodeSnippets\Service\SafeMode;
 use CodeSnippets\Service\SnippetEvaluator;
 use CodeSnippets\Service\SnippetExecutor;
 use CodeSnippets\Service\SnippetRepository;
+use CodeSnippets\Service\SnippetSigner;
 use Interop\Container\ContainerInterface;
 use Laminas\ServiceManager\Factory\FactoryInterface;
 
@@ -27,7 +28,8 @@ class SnippetExecutorFactory implements FactoryInterface
             $container->get(SnippetEvaluator::class),
             $container->get(PhpValidator::class),
             $logger,
-            $auth
+            $auth,
+            $container->get(SnippetSigner::class)
         );
     }
 }

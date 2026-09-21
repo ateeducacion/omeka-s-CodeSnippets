@@ -448,6 +448,56 @@ class SnippetControllerTest extends TestCase
         $this->assertSame('redirect:admin/code-snippets', $harness->controller->editAction());
     }
 
+    public function testAdminCreateAndEditUseSigningService(): void
+    {
+        $signer = new \CodeSnippets\Service\SnippetSigner(str_repeat('k', 32));
+        $this->service = new SnippetService($this->repository, new PhpValidator(), $signer);
+        $harness = $this->harness();
+        $harness->request->post = true;
+        $harness->params->post = [
+            'name' => 'Signed', 'code' => '$x = 1;', 'active' => '1', 'csrf' => $this->formCsrf(),
+            'signature' => 'forged', 'signing_key' => 'untrusted',
+        ];
+        $harness->controller->addAction();
+        $original = $this->repository->find(1);
+        $this->assertTrue($signer->verify($original));
+        $harness->params->route = ['id' => '1'];
+        $harness->params->post['code'] = '$x = 2;';
+        $harness->params->post['csrf'] = $this->formCsrf();
+        $harness->controller->editAction();
+        $updated = $this->repository->find(1);
+        $this->assertTrue($signer->verify($updated));
+        $this->assertNotSame($original['signature'], $updated['signature']);
+        $harness->request->post = false;
+        $this->assertSame('Valid', $harness->controller->editAction()->variables['integrityStatus']);
+        $this->assertSame([1 => 'Valid'], $harness->controller->indexAction()->variables['integrityStatuses']);
+    }
+
+    public function testAdminSigningFailuresAreGenericAndDoNotPersistWrites(): void
+    {
+        $this->service = new SnippetService(
+            $this->repository,
+            new PhpValidator(),
+            new \CodeSnippets\Service\SnippetSigner('invalid-secret')
+        );
+        $row = $this->service->create(['name' => 'Draft', 'code' => '$x = 1;', 'active' => false]);
+        foreach (['addAction', 'editAction', 'activateAction'] as $action) {
+            $harness = $this->harness();
+            $harness->request->post = true;
+            $harness->params->route = ['id' => '1'];
+            $harness->params->post = [
+                'name' => 'Attempt', 'code' => '$x = 2;', 'active' => '1',
+                'csrf' => $action === 'activateAction' ? 'good-token' : $this->formCsrf(),
+            ];
+            $harness->controller->$action();
+            $this->assertSame(
+                ['Snippet signing failed. Check the external signing configuration.'],
+                $harness->messenger->error
+            );
+            $this->assertSame([$row], $this->repository->findAll());
+        }
+    }
+
     private function harness(): ControllerHarness
     {
         $csrf = new ActionCsrf($this->actionCsrfValidator());

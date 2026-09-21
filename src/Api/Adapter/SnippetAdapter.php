@@ -7,6 +7,7 @@ namespace CodeSnippets\Api\Adapter;
 use CodeSnippets\Api\Representation\SnippetRepresentation;
 use CodeSnippets\Api\SnippetResource;
 use CodeSnippets\Exception\InvalidSyntaxException;
+use CodeSnippets\Exception\SnippetIntegrityException;
 use CodeSnippets\Exception\SnippetNotFoundException;
 use CodeSnippets\Service\SnippetService;
 use Omeka\Api\Adapter\AbstractAdapter;
@@ -189,6 +190,11 @@ class SnippetAdapter extends AbstractAdapter
             throw new NotFoundException($e->getMessage(), 0, $e);
         } catch (InvalidSyntaxException $e) {
             throw $this->validationError('code', $e->getMessage(), $e);
+        } catch (SnippetIntegrityException $e) {
+            throw $this->validationError(
+                'request',
+                'Snippet signing failed. Check the external signing configuration.'
+            );
         } catch (\InvalidArgumentException $e) {
             throw $this->validationError('request', $e->getMessage(), $e);
         }

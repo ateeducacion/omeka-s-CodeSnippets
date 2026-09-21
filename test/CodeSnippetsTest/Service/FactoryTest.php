@@ -17,6 +17,7 @@ use CodeSnippets\Service\SnippetExecutor;
 use CodeSnippets\Service\SnippetImportExport;
 use CodeSnippets\Service\SnippetRepository;
 use CodeSnippets\Service\SnippetService;
+use CodeSnippets\Service\SnippetSigner;
 use CodeSnippetsTest\Support\FakeContainer;
 use CodeSnippetsTest\Support\InMemorySnippetRepository;
 use CodeSnippetsTest\Support\LoggerSpy;
@@ -26,6 +27,22 @@ use PHPUnit\Framework\TestCase;
 
 class FactoryTest extends TestCase
 {
+    public function testSignerFactoryUsesOnlyExternalConfig(): void
+    {
+        $container = new FakeContainer([
+            'Config' => ['code_snippets' => ['signing_key' => str_repeat('k', 32)]],
+            'Omeka\Settings' => new \stdClass(),
+        ]);
+        $factory = new \CodeSnippets\Service\Factory\SnippetSignerFactory();
+        $this->assertSame(SnippetSigner::ENABLED, $factory($container, SnippetSigner::class)->state());
+        $config = (new \CodeSnippets\Module())->getConfig();
+        $this->assertNull($config['code_snippets']['signing_key']);
+        $this->assertSame(
+            get_class($factory),
+            $config['service_manager']['factories'][SnippetSigner::class]
+        );
+    }
+
     public function testSnippetControllerFactory(): void
     {
         $container = new FakeContainer([
@@ -43,6 +60,7 @@ class FactoryTest extends TestCase
     public function testSnippetServiceFactory(): void
     {
         $container = new FakeContainer([
+            SnippetSigner::class => new SnippetSigner(),
             SnippetRepository::class => new InMemorySnippetRepository(),
             PhpValidator::class => new PhpValidator(),
         ]);
@@ -68,6 +86,7 @@ class FactoryTest extends TestCase
     public function testSnippetExecutorFactoryWithoutOptionalServices(): void
     {
         $container = new FakeContainer([
+            SnippetSigner::class => new SnippetSigner(),
             SnippetRepository::class => new InMemorySnippetRepository(),
             SafeMode::class => new SafeMode(),
             SnippetEvaluator::class => new SnippetEvaluator(),
@@ -87,6 +106,7 @@ class FactoryTest extends TestCase
             }
         };
         $container = new FakeContainer([
+            SnippetSigner::class => new SnippetSigner(),
             SnippetRepository::class => new InMemorySnippetRepository(),
             SafeMode::class => new SafeMode(),
             SnippetEvaluator::class => new SnippetEvaluator(),

@@ -284,4 +284,50 @@ class SnippetAdapterTest extends TestCase
             $this->assertArrayHasKey('name', $e->getErrorStore()->getErrors());
         }
     }
+
+    public function testHardenedApiWritesSignLocallyAndNeverExposeSignatureOrKey(): void
+    {
+        $key = str_repeat('secret', 8);
+        $signer = new \CodeSnippets\Service\SnippetSigner($key);
+        $adapter = $this->makeAdapter(true);
+        $adapter->setSnippetService(new SnippetService($this->repository, new PhpValidator(), $signer));
+        $resource = $adapter->create($this->request(Request::CREATE, null, [
+            'name' => 'Signed', 'code' => '$x = 1;', 'active' => true,
+            'signature' => 'forged', 'signing_key' => 'attacker',
+        ]))->getContent();
+        $created = $this->repository->find($resource->getId());
+        $this->assertTrue($signer->verify($created));
+        $updatedResource = $adapter->update($this->request(Request::UPDATE, $created['id'], [
+            'code' => '$x = 2;', 'signature' => $created['signature'],
+        ]))->getContent();
+        $updated = $this->repository->find($created['id']);
+        $this->assertTrue($signer->verify($updated));
+        $this->assertNotSame($created['signature'], $updated['signature']);
+        $json = json_encode($adapter->getRepresentation($updatedResource)->jsonSerialize());
+        $this->assertStringNotContainsString('signature', $json);
+        $this->assertStringNotContainsString($key, $json);
+        $this->assertStringNotContainsString($updated['signature'], $json);
+        $this->assertNotContains('signature', SnippetAdapter::WRITABLE_FIELDS);
+    }
+
+    public function testSigningFailureReturnsGenericApiValidationError(): void
+    {
+        $adapter = $this->makeAdapter(true);
+        $adapter->setSnippetService(new SnippetService(
+            $this->repository,
+            new PhpValidator(),
+            new \CodeSnippets\Service\SnippetSigner('invalid-secret')
+        ));
+        try {
+            $adapter->create($this->request(Request::CREATE, null, [
+                'name' => 'Signed', 'code' => '$x = 1;', 'active' => true,
+            ]));
+            $this->fail('Expected validation failure.');
+        } catch (ValidationException $e) {
+            $this->assertNull($e->getPrevious());
+            $this->assertStringNotContainsString('invalid-secret', (string) $e);
+            $this->assertArrayHasKey('request', $e->getErrorStore()->getErrors());
+            $this->assertSame([], $this->repository->findAll());
+        }
+    }
 }

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-09-18 18:28+0100\n"
+"POT-Creation-Date: 2026-09-21 10:36+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -29,7 +29,7 @@ msgid "Safe mode is active. PHP snippets are not being executed."
 msgstr ""
 
 #: view/code-snippets/admin/snippet/delete.phtml:32
-#: view/code-snippets/admin/snippet/form.phtml:73
+#: view/code-snippets/admin/snippet/form.phtml:79
 msgid "Cancel"
 msgstr ""
 
@@ -58,68 +58,73 @@ msgid "Name"
 msgstr ""
 
 #: view/code-snippets/admin/snippet/index.phtml:44
-#: view/code-snippets/admin/snippet/form.phtml:35
+#: view/code-snippets/admin/snippet/form.phtml:41
 msgid "Status"
 msgstr ""
 
 #: view/code-snippets/admin/snippet/index.phtml:45
-msgid "Run snippet"
+#: view/code-snippets/admin/snippet/form.phtml:34
+msgid "Integrity"
 msgstr ""
 
 #: view/code-snippets/admin/snippet/index.phtml:46
-msgid "Priority"
+msgid "Run snippet"
 msgstr ""
 
 #: view/code-snippets/admin/snippet/index.phtml:47
-msgid "Modified"
+msgid "Priority"
 msgstr ""
 
 #: view/code-snippets/admin/snippet/index.phtml:48
-msgid "Last error"
+msgid "Modified"
 msgstr ""
 
 #: view/code-snippets/admin/snippet/index.phtml:49
+msgid "Last error"
+msgstr ""
+
+#: view/code-snippets/admin/snippet/index.phtml:50
 msgid "Actions"
 msgstr ""
 
-#: view/code-snippets/admin/snippet/index.phtml:65
-#: view/code-snippets/admin/snippet/form.phtml:37
+#: view/code-snippets/admin/snippet/index.phtml:66
+#: view/code-snippets/admin/snippet/form.phtml:43
 msgid "Active"
 msgstr ""
 
-#: view/code-snippets/admin/snippet/index.phtml:67
-#: view/code-snippets/admin/snippet/form.phtml:39
+#: view/code-snippets/admin/snippet/index.phtml:68
+#: view/code-snippets/admin/snippet/form.phtml:45
 msgid "Inactive"
 msgstr ""
 
-#: view/code-snippets/admin/snippet/index.phtml:70
+#: view/code-snippets/admin/snippet/index.phtml:71
 msgid "Error"
 msgstr ""
 
-#: view/code-snippets/admin/snippet/index.phtml:94
+#: view/code-snippets/admin/snippet/index.phtml:97
 msgid "None"
 msgstr ""
 
-#: view/code-snippets/admin/snippet/index.phtml:102
-#: view/code-snippets/admin/snippet/form.phtml:85
+#: view/code-snippets/admin/snippet/index.phtml:105
+#: view/code-snippets/admin/snippet/form.phtml:91
 msgid "Deactivate"
 msgstr ""
 
-#: view/code-snippets/admin/snippet/index.phtml:107
+#: view/code-snippets/admin/snippet/index.phtml:110
 msgid "Activate"
 msgstr ""
 
-#: view/code-snippets/admin/snippet/index.phtml:113
+#: view/code-snippets/admin/snippet/index.phtml:116
 msgid "Edit"
 msgstr ""
 
-#: view/code-snippets/admin/snippet/index.phtml:122
-#: view/code-snippets/admin/snippet/form.phtml:70
+#: view/code-snippets/admin/snippet/index.phtml:125
+#: view/code-snippets/admin/snippet/form.phtml:76
 msgid "Delete"
 msgstr ""
 
-#: view/code-snippets/admin/snippet/index.phtml:135
-#: view/code-snippets/admin/snippet/form.phtml:93
+#: view/code-snippets/admin/snippet/index.phtml:138
+#: view/code-snippets/admin/snippet/form.phtml:99
 msgid "Close"
 msgstr ""
 
@@ -134,31 +139,36 @@ msgid ""
 "trusted global administrators should be allowed to manage snippets."
 msgstr ""
 
-#: view/code-snippets/admin/snippet/form.phtml:44
+#: view/code-snippets/admin/snippet/form.phtml:38
+msgid ""
+"Existing snippets must be reviewed and saved again before they can execute."
+msgstr ""
+
+#: view/code-snippets/admin/snippet/form.phtml:50
 msgid "Last runtime error"
 msgstr ""
 
-#: view/code-snippets/admin/snippet/form.phtml:46
+#: view/code-snippets/admin/snippet/form.phtml:52
 msgid "Error type"
 msgstr ""
 
-#: view/code-snippets/admin/snippet/form.phtml:48
+#: view/code-snippets/admin/snippet/form.phtml:54
 msgid "Message"
 msgstr ""
 
-#: view/code-snippets/admin/snippet/form.phtml:51
+#: view/code-snippets/admin/snippet/form.phtml:57
 msgid "Line"
 msgstr ""
 
-#: view/code-snippets/admin/snippet/form.phtml:54
+#: view/code-snippets/admin/snippet/form.phtml:60
 msgid "Date/time"
 msgstr ""
 
-#: view/code-snippets/admin/snippet/form.phtml:67
+#: view/code-snippets/admin/snippet/form.phtml:73
 msgid "Save"
 msgstr ""
 
-#: view/code-snippets/admin/snippet/form.phtml:68
+#: view/code-snippets/admin/snippet/form.phtml:74
 msgid "Save and activate"
 msgstr ""
 
@@ -173,64 +183,90 @@ msgstr ""
 msgid "Confirm delete"
 msgstr ""
 
-#: src/Controller/Admin/SnippetController.php:261
+#: src/Controller/Admin/SnippetController.php:276
 msgid "You are not allowed to manage code snippets."
 msgstr ""
 
-#: src/Controller/Admin/SnippetController.php:299
+#: src/Controller/Admin/SnippetController.php:314
 msgid "Method not allowed."
 msgstr ""
 
-#: Module.php:254
+#: Module.php:258
 msgid "Allow snippet writes over the REST API"
 msgstr ""
 
-#: Module.php:255
+#: Module.php:259
 msgid ""
 "Disabled by default. An API key could then create and change snippet PHP."
 msgstr ""
 
-#: Module.php:256
+#: Module.php:260
 msgid ""
 "Omeka sends API credentials in the query string, where server logs record "
 "them."
 msgstr ""
 
-#: Module.php:257
+#: Module.php:261
 msgid "Reading snippets over the API is not affected by this setting."
 msgstr ""
 
+#: Module.php:286
+msgid "Database integrity signing: enabled"
+msgstr ""
+
+#: Module.php:287
+msgid "Unsigned or modified active snippets are blocked before execution."
+msgstr ""
+
 #: Module.php:290
-msgid "Individual users who may manage snippets"
+msgid "Database integrity signing: configuration error"
 msgstr ""
 
 #: Module.php:291
+msgid ""
+"Snippets will not execute until the signing key configuration is corrected."
+msgstr ""
+
+#: Module.php:294
+msgid "Database integrity signing: disabled"
+msgstr ""
+
+#: Module.php:295
+msgid ""
+"Optional. Configure code_snippets.signing_key in config/local.config.php."
+msgstr ""
+
+#: Module.php:328
+msgid "Individual users who may manage snippets"
+msgstr ""
+
+#: Module.php:329
 msgid ""
 "Comma separated user ids. A user id appears in the URL of that user's admin "
 "page."
 msgstr ""
 
-#: Module.php:292
+#: Module.php:330
 msgid "The same warning applies: these users can run PHP as the web process."
 msgstr ""
 
-#: Module.php:293
+#: Module.php:331
 msgid "no such user"
 msgstr ""
 
-#: Module.php:374
+#: Module.php:412
 msgid "Additional roles that may manage snippets"
 msgstr ""
 
-#: Module.php:375
+#: Module.php:413
 msgid "A role listed here can create and edit PHP that Omeka executes."
 msgstr ""
 
-#: Module.php:376
+#: Module.php:414
 msgid "That is equivalent to granting global administrator."
 msgstr ""
 
-#: Module.php:377
+#: Module.php:415
 msgid "Only add roles held by people you would already trust with the server."
 msgstr ""
 
@@ -268,37 +304,41 @@ msgstr ""
 msgid "Execute this snippet on HTTP requests."
 msgstr ""
 
-#: src/Controller/Admin/SnippetController.php:69
+#: src/Controller/Admin/SnippetController.php:76
 msgid "Snippet created."
 msgstr ""
 
-#: src/Controller/Admin/SnippetController.php:120
+#: src/Controller/Admin/SnippetController.php:129
 msgid "Snippet updated."
 msgstr ""
 
-#: src/Controller/Admin/SnippetController.php:157
+#: src/Controller/Admin/SnippetController.php:169
 msgid "Snippet activated."
 msgstr ""
 
-#: src/Controller/Admin/SnippetController.php:184
+#: src/Controller/Admin/SnippetController.php:199
 msgid "Snippet deactivated."
 msgstr ""
 
-#: src/Controller/Admin/SnippetController.php:209
+#: src/Controller/Admin/SnippetController.php:224
 msgid "Snippet deleted."
 msgstr ""
 
-#: src/Controller/Admin/SnippetController.php:290
+#: src/Controller/Admin/SnippetController.php:305
 msgid "The requested snippet was not found."
 msgstr ""
 
-#: src/Controller/Admin/SnippetController.php:305
+#: src/Controller/Admin/SnippetController.php:320
 msgid "Invalid CSRF token."
 msgstr ""
 
-#: src/Controller/Admin/SnippetController.php:314
+#: src/Controller/Admin/SnippetController.php:329
 #, php-format
 msgid "The snippet contains invalid PHP syntax: %s"
+msgstr ""
+
+#: src/Controller/Admin/SnippetController.php:336
+msgid "Snippet signing failed. Check the external signing configuration."
 msgstr ""
 
 #: src/Service/SnippetScope.php:39
@@ -323,4 +363,28 @@ msgstr ""
 
 #: src/Service/SnippetScope.php:53
 msgid "Site front-end"
+msgstr ""
+
+#: src/Service/SnippetService.php:143
+msgid "Signing disabled"
+msgstr ""
+
+#: src/Service/SnippetService.php:146
+msgid "Signing configuration error"
+msgstr ""
+
+#: src/Service/SnippetService.php:149
+msgid "Unsigned"
+msgstr ""
+
+#: src/Service/SnippetService.php:152
+msgid "Valid"
+msgstr ""
+
+#: src/Service/SnippetService.php:154
+msgid "Invalid"
+msgstr ""
+
+#: src/Service/SnippetExecutor.php:166
+msgid "Snippet integrity verification failed; execution skipped."
 msgstr ""
