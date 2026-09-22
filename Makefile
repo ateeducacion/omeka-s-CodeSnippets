@@ -157,6 +157,7 @@ test: deps-update
 test-coverage:
 	@echo "Running unit tests with coverage..."
 	# pcov auto-detects pcov.directory as src/, which silently drops Module.php from the report.
+	rm -f coverage.xml
 	php -d pcov.directory=. -d pcov.exclude='~/(vendor|test)/~' "vendor/bin/phpunit" -c test/phpunit.xml --coverage-clover coverage.xml --coverage-text
 	php test/check-coverage.php coverage.xml 90
 
