@@ -7,7 +7,7 @@ on:
     tags:
       - '*'
     branches:
-      - '*'
+      - '**'
 
 permissions:
   contents: read
@@ -15,9 +15,14 @@ permissions:
 jobs:
   lint_and_test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       # Checkout the code
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: PHP setup
         uses: shivammathur/setup-php@v2
@@ -40,16 +45,15 @@ jobs:
         run: make compile-mo
 
       - name: Run code linting
-        run: make lint
+        run: vendor/bin/phpcs . --standard=PSR2 --ignore=vendor/,assets/,node_modules/,tests/js/,tests/ --colors --extensions=php
 
-      - name: Run unit tests
-        # pcov auto-detects pcov.directory as src/, which would drop Module.php.
-        run: php -d pcov.directory=. -d pcov.exclude='~/(vendor|test)/~' vendor/bin/phpunit -c test/phpunit.xml --coverage-clover coverage.xml --coverage-text
+      - name: Run unit tests and enforce 90% coverage
+        run: make test-coverage
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          use_oidc: true
           files: coverage.xml
           disable_search: true
           fail_ci_if_error: true

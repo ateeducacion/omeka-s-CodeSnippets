@@ -520,6 +520,10 @@ make i18n
 make package VERSION=1.0.0
 ```
 
+Coverage includes `Module.php` and every PHP class in `src/`, including untested files.
+`make test-coverage` and CI fail below 90% line coverage. CI uploads the Clover report
+to Codecov using GitHub OIDC; project and patch targets are also 90%.
+
 ## License
 
 GNU GPL-3.0-or-later. See [LICENSE](LICENSE).
