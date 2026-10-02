@@ -95,8 +95,8 @@ class ExampleSnippetsTest extends TestCase
         $path = dirname(__DIR__, 3) . '/blueprint.json';
         $blueprint = json_decode((string) file_get_contents($path), true);
         $this->assertIsArray($blueprint);
-        $this->assertArrayHasKey('phpConstants', $blueprint);
-        $this->assertTrue($blueprint['phpConstants']['CODE_SNIPPETS_PLAYGROUND']);
+        $this->assertArrayHasKey('phpConstants', $blueprint['x-playground']);
+        $this->assertTrue($blueprint['x-playground']['phpConstants']['CODE_SNIPPETS_PLAYGROUND']);
     }
 
     public function testActivatingTheYearExampleAfterInstallAppendsTheYear(): void
