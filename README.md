@@ -57,7 +57,7 @@ Docker development (from this repository):
 make upd
 ```
 
-Open `http://localhost:8080`. Default admin: `admin@example.com` / `PLEASE_CHANGEME`. Enable the module with `make enable-module` if the first boot did not.
+Open `http://localhost:8080`. Default admin: `admin@example.com` / `password`. The stack applies `blueprint.json` (the same file as the Omeka S Playground) on every start, which enables the module.
 
 ## Usage
 
