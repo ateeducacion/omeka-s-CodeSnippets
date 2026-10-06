@@ -1,13 +1,6 @@
 {
-  "$schema": "https://ateeducacion.github.io/omeka-s-playground/assets/blueprints/blueprint-schema.json",
-  "debug": {
-    "enabled": true
-  },
-  "phpConstants": {
-    "CODE_SNIPPETS_PLAYGROUND": true
-  },
-  "landingPage": "/admin/code-snippets",
-  "siteOptions": {
+  "$schema": "https://omeka-s-contrib.github.io/omeka-s-blueprints/schema/v0/blueprint-schema.json",
+  "install": {
     "title": "CodeSnippets Playground",
     "locale": "es",
     "timezone": "Atlantic/Canary"
@@ -24,18 +17,26 @@
     {
       "name": "CodeSnippets",
       "state": "activate",
-      "source": {
-        "type": "url",
-        "url": "https://github.com/ateeducacion/omeka-s-CodeSnippets/archive/refs/heads/main.zip"
-      }
+      "source": "https://github.com/ateeducacion/omeka-s-CodeSnippets/archive/refs/heads/main.zip"
     }
   ],
-  "site": {
-    "title": "CodeSnippets Demo",
-    "slug": "demo",
-    "theme": "default",
-    "summary": "Try CodeSnippets after install: WordPress-style example snippets are seeded, and the current-year footer snippet is active in this playground.",
-    "isPublic": true,
-    "setAsDefault": true
+  "sites": [
+    {
+      "title": "CodeSnippets Demo",
+      "slug": "demo",
+      "theme": "default",
+      "summary": "Try CodeSnippets after install: WordPress-style example snippets are seeded, and the current-year footer snippet is active in this playground.",
+      "isPublic": true,
+      "setAsDefault": true
+    }
+  ],
+  "x-playground": {
+    "debug": {
+      "enabled": true
+    },
+    "phpConstants": {
+      "CODE_SNIPPETS_PLAYGROUND": true
+    },
+    "landingPage": "/admin/code-snippets"
   }
 }
